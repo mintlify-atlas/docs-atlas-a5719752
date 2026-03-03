@@ -1,0 +1,154 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "ElevenLabs Python SDK",
+  "projectDescription": "The official Python SDK for ElevenLabs text-to-speech, conversational AI, and audio generation APIs.",
+  "theme": "palm",
+  "primaryColor": "#6366f1",
+  "lightColor": "#818cf8",
+  "darkColor": "#4f46e5",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "text-to-speech",
+              "streaming",
+              "voices",
+              "models"
+            ]
+          },
+          {
+            "group": "Conversational AI",
+            "pages": [
+              "conversational-ai/overview",
+              "conversational-ai/agents",
+              "conversational-ai/conversations",
+              "conversational-ai/tools",
+              "conversational-ai/audio-interface"
+            ]
+          },
+          {
+            "group": "Advanced Features",
+            "pages": [
+              "advanced/voice-cloning",
+              "advanced/speech-to-speech",
+              "advanced/speech-to-text",
+              "advanced/dubbing",
+              "advanced/audio-isolation",
+              "advanced/audio-native",
+              "advanced/music-generation"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/async-client",
+              "guides/error-handling",
+              "guides/pronunciation-dictionaries",
+              "guides/webhooks"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Client",
+            "pages": [
+              "api-reference/client",
+              "api-reference/async-client"
+            ]
+          },
+          {
+            "group": "Text to Speech",
+            "pages": [
+              "api-reference/text-to-speech/convert",
+              "api-reference/text-to-speech/stream",
+              "api-reference/text-to-speech/realtime"
+            ]
+          },
+          {
+            "group": "Voices",
+            "pages": [
+              "api-reference/voices/search",
+              "api-reference/voices/get",
+              "api-reference/voices/clone",
+              "api-reference/voices/settings"
+            ]
+          },
+          {
+            "group": "Conversational AI",
+            "pages": [
+              "api-reference/conversational-ai/conversation",
+              "api-reference/conversational-ai/agents",
+              "api-reference/conversational-ai/client-tools",
+              "api-reference/conversational-ai/audio-interface"
+            ]
+          },
+          {
+            "group": "Audio Processing",
+            "pages": [
+              "api-reference/audio/speech-to-speech",
+              "api-reference/audio/speech-to-text",
+              "api-reference/audio/dubbing",
+              "api-reference/audio/isolation",
+              "api-reference/audio/music"
+            ]
+          },
+          {
+            "group": "History & Models",
+            "pages": [
+              "api-reference/history",
+              "api-reference/models"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Text-to-speech with 70+ languages and multiple AI models",
+    "Voice cloning (IVC) for instant voice replication",
+    "Real-time streaming audio generation",
+    "Conversational AI agents with interactive audio capabilities",
+    "Speech-to-speech and speech-to-text conversion",
+    "Audio dubbing with multi-language support",
+    "Music generation and audio isolation",
+    "Async/await support for all operations",
+    "WebSocket-based real-time communication",
+    "Comprehensive voice management and customization"
+  ],
+  "publicApiSurface": [
+    "ElevenLabs",
+    "AsyncElevenLabs",
+    "text_to_speech.convert()",
+    "text_to_speech.stream()",
+    "voices.search()",
+    "voices.ivc.create()",
+    "Conversation",
+    "ClientTools",
+    "DefaultAudioInterface",
+    "speech_to_speech.convert()",
+    "speech_to_text.transcribe()",
+    "dubbing.create()",
+    "audio_isolation.isolate()",
+    "music.generate()",
+    "history.get_all()",
+    "models.list()",
+    "play()",
+    "stream()"
+  ]
+}
