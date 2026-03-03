@@ -1,0 +1,428 @@
+---
+title: 'Conversations'
+description: 'Start and manage real-time conversations with the Conversation class'
+---
+
+## Overview
+
+The `Conversation` class manages WebSocket-based real-time conversations with your AI agents. It handles audio streaming, message events, and the conversation lifecycle.
+
+## Basic Usage
+
+Create and start a conversation:
+
+```python
+from elevenlabs.client import ElevenLabs
+from elevenlabs.conversational_ai.conversation import Conversation
+from elevenlabs.conversational_ai.default_audio_interface import DefaultAudioInterface
+
+elevenlabs = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Create audio interface
+audio_interface = DefaultAudioInterface()
+
+# Create conversation
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+)
+
+# Start conversation in background
+conversation.start_session()
+
+# ... conversation runs in background thread ...
+
+# End conversation
+conversation.end_session()
+
+# Wait for cleanup
+conversation_id = conversation.wait_for_session_end()
+print(f"Conversation ID: {conversation_id}")
+```
+
+## Constructor Parameters
+
+<ParamField path="client" type="ElevenLabs" required>
+  The ElevenLabs client instance
+</ParamField>
+
+<ParamField path="agent_id" type="str" required>
+  The ID of the agent to converse with
+</ParamField>
+
+<ParamField path="requires_auth" type="bool" required>
+  Whether the agent requires authentication
+</ParamField>
+
+<ParamField path="audio_interface" type="AudioInterface" required>
+  Audio interface for input/output handling
+</ParamField>
+
+<ParamField path="user_id" type="str">
+  Optional user identifier for the conversation
+</ParamField>
+
+<ParamField path="config" type="ConversationInitiationData">
+  Configuration options for the conversation
+</ParamField>
+
+<ParamField path="client_tools" type="ClientTools">
+  Custom tools the agent can call during conversation
+</ParamField>
+
+## Event Callbacks
+
+Register callbacks to handle conversation events:
+
+```python
+def on_agent_response(response: str):
+    print(f"Agent said: {response}")
+
+def on_user_transcript(transcript: str):
+    print(f"User said: {transcript}")
+
+def on_latency(latency_ms: int):
+    print(f"Latency: {latency_ms}ms")
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    callback_agent_response=on_agent_response,
+    callback_user_transcript=on_user_transcript,
+    callback_latency_measurement=on_latency,
+)
+```
+
+### Available Callbacks
+
+<ParamField path="callback_agent_response" type="Callable[[str], None]">
+  Called when the agent produces a complete response
+</ParamField>
+
+<ParamField path="callback_agent_response_correction" type="Callable[[str, str], None]">
+  Called when the agent corrects a previous response. First arg is original, second is corrected.
+</ParamField>
+
+<ParamField path="callback_agent_chat_response_part" type="Callable[[str, AgentChatResponsePartType], None]">
+  Called for streaming text response chunks. Part type is START, DELTA, or STOP.
+</ParamField>
+
+<ParamField path="callback_user_transcript" type="Callable[[str], None]">
+  Called when user speech is transcribed
+</ParamField>
+
+<ParamField path="callback_latency_measurement" type="Callable[[int], None]">
+  Called with latency measurements in milliseconds
+</ParamField>
+
+<ParamField path="callback_audio_alignment" type="Callable[[AudioEventAlignment], None]">
+  Called with character-level audio alignment data
+</ParamField>
+
+<ParamField path="callback_end_session" type="Callable[[], None]">
+  Called when the conversation session ends
+</ParamField>
+
+## Streaming Response Parts
+
+Handle streaming text responses from the agent:
+
+```python
+from elevenlabs.conversational_ai.conversation import AgentChatResponsePartType
+
+def on_chat_part(text: str, part_type: AgentChatResponsePartType):
+    if part_type == AgentChatResponsePartType.START:
+        print("Agent starting response...")
+    elif part_type == AgentChatResponsePartType.DELTA:
+        print(text, end="", flush=True)
+    elif part_type == AgentChatResponsePartType.STOP:
+        print("\nAgent finished response.")
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    callback_agent_chat_response_part=on_chat_part,
+)
+```
+
+## Audio Alignment
+
+Get character-level timing information for agent audio:
+
+```python
+from elevenlabs.conversational_ai.conversation import AudioEventAlignment
+
+def on_alignment(alignment: AudioEventAlignment):
+    for i, char in enumerate(alignment.chars):
+        start_ms = alignment.char_start_times_ms[i]
+        duration_ms = alignment.char_durations_ms[i]
+        print(f"{char}: {start_ms}ms (+{duration_ms}ms)")
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    callback_audio_alignment=on_alignment,
+)
+```
+
+## Sending Messages
+
+Send text messages to the agent programmatically:
+
+```python
+conversation.start_session()
+
+# Send a text message from the user
+conversation.send_user_message("What is the weather like today?")
+
+# Send contextual updates (non-interrupting)
+conversation.send_contextual_update("User is looking at the weather page")
+
+# Register user activity to prevent timeout
+conversation.register_user_activity()
+```
+
+### Message Methods
+
+<ResponseField name="send_user_message" type="method">
+  Send a text message from the user to the agent
+  
+  ```python
+  conversation.send_user_message(text: str)
+  ```
+</ResponseField>
+
+<ResponseField name="send_contextual_update" type="method">
+  Send non-interrupting contextual information to update conversation state
+  
+  ```python
+  conversation.send_contextual_update(text: str)
+  ```
+</ResponseField>
+
+<ResponseField name="register_user_activity" type="method">
+  Send a ping to prevent session timeout
+  
+  ```python
+  conversation.register_user_activity()
+  ```
+</ResponseField>
+
+## Configuration Options
+
+Customize conversation behavior with `ConversationInitiationData`:
+
+```python
+from elevenlabs.conversational_ai.conversation import ConversationInitiationData
+
+config = ConversationInitiationData(
+    extra_body={"custom_param": "value"},
+    conversation_config_override={
+        "language": "en",
+        "max_duration_seconds": 300,
+    },
+    dynamic_variables={
+        "user_name": "John",
+        "account_type": "premium",
+    },
+    user_id="user_12345",
+)
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    config=config,
+)
+```
+
+### Configuration Fields
+
+<ParamField path="extra_body" type="dict">
+  Additional custom parameters passed to the LLM
+</ParamField>
+
+<ParamField path="conversation_config_override" type="dict">
+  Override default conversation configuration settings
+</ParamField>
+
+<ParamField path="dynamic_variables" type="dict">
+  Dynamic variables accessible to the agent during conversation
+</ParamField>
+
+<ParamField path="user_id" type="str">
+  Identifier for the user in this conversation
+</ParamField>
+
+## Session Management
+
+### Start Session
+
+Starts the conversation in a background thread:
+
+```python
+conversation.start_session()
+# Returns immediately, conversation runs in background
+```
+
+### End Session
+
+Ends the conversation and cleans up resources:
+
+```python
+conversation.end_session()
+```
+
+### Wait for Session End
+
+Blocks until the conversation completes:
+
+```python
+conversation.end_session()
+conversation_id = conversation.wait_for_session_end()
+print(f"Conversation {conversation_id} has ended")
+```
+
+<Warning>
+  Call `end_session()` before `wait_for_session_end()`, otherwise it will block indefinitely.
+</Warning>
+
+## Async Conversations
+
+Use `AsyncConversation` for async/await workflows:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+from elevenlabs.conversational_ai.conversation import AsyncConversation
+from elevenlabs.conversational_ai.default_audio_interface import AsyncDefaultAudioInterface
+
+elevenlabs = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def on_agent_response(response: str):
+    print(f"Agent: {response}")
+
+async def on_user_transcript(transcript: str):
+    print(f"User: {transcript}")
+
+async def main():
+    audio_interface = AsyncDefaultAudioInterface()
+    
+    conversation = AsyncConversation(
+        client=elevenlabs,
+        agent_id="your-agent-id",
+        requires_auth=True,
+        audio_interface=audio_interface,
+        callback_agent_response=on_agent_response,
+        callback_user_transcript=on_user_transcript,
+    )
+    
+    await conversation.start_session()
+    
+    # Send a message
+    await conversation.send_user_message("Hello!")
+    
+    # Wait a bit
+    await asyncio.sleep(10)
+    
+    await conversation.end_session()
+    conversation_id = await conversation.wait_for_session_end()
+    print(f"Conversation {conversation_id} ended")
+
+asyncio.run(main())
+```
+
+<Note>
+  All async callbacks must be async functions. Use `AsyncAudioInterface` instead of `AudioInterface`.
+</Note>
+
+## Error Handling
+
+Handle connection and runtime errors:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+try:
+    conversation.start_session()
+    conversation.wait_for_session_end()
+except RuntimeError as e:
+    print(f"Conversation error: {e}")
+except Exception as e:
+    print(f"Unexpected error: {e}")
+finally:
+    conversation.end_session()
+```
+
+## Complete Example
+
+```python
+from elevenlabs.client import ElevenLabs
+from elevenlabs.conversational_ai.conversation import (
+    Conversation,
+    ConversationInitiationData,
+    ClientTools,
+)
+from elevenlabs.conversational_ai.default_audio_interface import DefaultAudioInterface
+
+elevenlabs = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Set up callbacks
+def on_agent_response(response: str):
+    print(f"Agent: {response}")
+
+def on_user_transcript(transcript: str):
+    print(f"User: {transcript}")
+
+def on_latency(ms: int):
+    print(f"Latency: {ms}ms")
+
+# Set up tools
+client_tools = ClientTools()
+
+def get_weather(params):
+    location = params.get("location", "Unknown")
+    return f"Weather in {location}: Sunny, 72°F"
+
+client_tools.register("get_weather", get_weather, is_async=False)
+
+# Configure conversation
+config = ConversationInitiationData(
+    dynamic_variables={"user_name": "Alice"},
+)
+
+# Create and start conversation
+audio_interface = DefaultAudioInterface()
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    config=config,
+    client_tools=client_tools,
+    callback_agent_response=on_agent_response,
+    callback_user_transcript=on_user_transcript,
+    callback_latency_measurement=on_latency,
+)
+
+conversation.start_session()
+
+# Conversation runs until user ends it
+input("Press Enter to end conversation...")
+
+conversation.end_session()
+conversation_id = conversation.wait_for_session_end()
+print(f"Conversation {conversation_id} ended")
+```

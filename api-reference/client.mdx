@@ -1,0 +1,381 @@
+---
+title: "ElevenLabs Client"
+description: "Main client class for synchronous ElevenLabs API operations"
+---
+
+## Overview
+
+The `ElevenLabs` client class is the primary interface for interacting with the ElevenLabs API synchronously. You can instantiate multiple clients with different configurations that will propagate to all API methods.
+
+## Initialization
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+```
+
+### Parameters
+
+<ParamField path="api_key" type="str" optional>
+  Your ElevenLabs API key. If not provided, the client will attempt to read from the `ELEVENLABS_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str" optional>
+  The base URL to use for requests from the client. Use this to override the default API endpoint.
+</ParamField>
+
+<ParamField path="environment" type="ElevenLabsEnvironment" default="ElevenLabsEnvironment.PRODUCTION">
+  The environment to use for requests from the client. Import with:
+  ```python
+  from elevenlabs.environment import ElevenLabsEnvironment
+  ```
+</ParamField>
+
+<ParamField path="headers" type="Dict[str, str]" optional>
+  Additional headers to send with every request.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="240">
+  The timeout to be used, in seconds, for requests. By default the timeout is 240 seconds, unless a custom httpx client is used, in which case this default is not enforced.
+</ParamField>
+
+<ParamField path="follow_redirects" type="bool" default="true">
+  Whether the default httpx client follows redirects or not. This is irrelevant if a custom httpx client is passed in.
+</ParamField>
+
+<ParamField path="httpx_client" type="httpx.Client" optional>
+  The httpx client to use for making requests. A preconfigured client is used by default, however this is useful should you want to pass in any custom httpx configuration.
+</ParamField>
+
+## Properties
+
+The client provides access to various API endpoints through properties:
+
+### history
+
+```python
+client.history
+```
+
+Access to the History API for retrieving and managing generated audio history.
+
+**Type:** `HistoryClient`
+
+### text_to_speech
+
+```python
+client.text_to_speech
+```
+
+Access to the Text-to-Speech API for converting text to speech audio.
+
+**Type:** `TextToSpeechClient`
+
+### text_to_sound_effects
+
+```python
+client.text_to_sound_effects
+```
+
+Access to the Text-to-Sound Effects API for generating sound effects from text descriptions.
+
+**Type:** `TextToSoundEffectsClient`
+
+### text_to_dialogue
+
+```python
+client.text_to_dialogue
+```
+
+Access to the Text-to-Dialogue API for creating multi-voice dialogues.
+
+**Type:** `TextToDialogueClient`
+
+### speech_to_speech
+
+```python
+client.speech_to_speech
+```
+
+Access to the Speech-to-Speech API for voice conversion.
+
+**Type:** `SpeechToSpeechClient`
+
+### speech_to_text
+
+```python
+client.speech_to_text
+```
+
+Access to the Speech-to-Text API for transcribing audio to text.
+
+**Type:** `SpeechToTextClient`
+
+### text_to_voice
+
+```python
+client.text_to_voice
+```
+
+Access to the Text-to-Voice API for creating custom voices.
+
+**Type:** `TextToVoiceClient`
+
+### voices
+
+```python
+client.voices
+```
+
+Access to the Voices API for managing and retrieving voice models.
+
+**Type:** `VoicesClient`
+
+### models
+
+```python
+client.models
+```
+
+Access to the Models API for retrieving available AI models.
+
+**Type:** `ModelsClient`
+
+### user
+
+```python
+client.user
+```
+
+Access to the User API for managing user account information.
+
+**Type:** `UserClient`
+
+### usage
+
+```python
+client.usage
+```
+
+Access to the Usage API for tracking API usage and quotas.
+
+**Type:** `UsageClient`
+
+### samples
+
+```python
+client.samples
+```
+
+Access to the Samples API for managing voice samples.
+
+**Type:** `SamplesClient`
+
+### audio_isolation
+
+```python
+client.audio_isolation
+```
+
+Access to the Audio Isolation API for separating audio sources.
+
+**Type:** `AudioIsolationClient`
+
+### audio_native
+
+```python
+client.audio_native
+```
+
+Access to the Audio Native API for creating audio-native projects.
+
+**Type:** `AudioNativeClient`
+
+### dubbing
+
+```python
+client.dubbing
+```
+
+Access to the Dubbing API for video and audio dubbing.
+
+**Type:** `DubbingClient`
+
+### studio
+
+```python
+client.studio
+```
+
+Access to the Studio API for managing studio projects.
+
+**Type:** `StudioClient`
+
+### pronunciation_dictionaries
+
+```python
+client.pronunciation_dictionaries
+```
+
+Access to the Pronunciation Dictionaries API for managing custom pronunciations.
+
+**Type:** `PronunciationDictionariesClient`
+
+### service_accounts
+
+```python
+client.service_accounts
+```
+
+Access to the Service Accounts API for managing service accounts.
+
+**Type:** `ServiceAccountsClient`
+
+### webhooks
+
+```python
+client.webhooks
+```
+
+Access to the Webhooks API for managing webhook subscriptions.
+
+**Type:** `WebhooksClient`
+
+### forced_alignment
+
+```python
+client.forced_alignment
+```
+
+Access to the Forced Alignment API for audio-text alignment.
+
+**Type:** `ForcedAlignmentClient`
+
+### conversational_ai
+
+```python
+client.conversational_ai
+```
+
+Access to the Conversational AI API for building conversational agents.
+
+**Type:** `ConversationalAiClient`
+
+### music
+
+```python
+client.music
+```
+
+Access to the Music API for generating AI music.
+
+**Type:** `MusicClient`
+
+### tokens
+
+```python
+client.tokens
+```
+
+Access to the Tokens API for managing authentication tokens.
+
+**Type:** `TokensClient`
+
+### workspace
+
+```python
+client.workspace
+```
+
+Access to the Workspace API for managing workspace settings.
+
+**Type:** `WorkspaceClient`
+
+### with_raw_response
+
+```python
+client.with_raw_response
+```
+
+Retrieves a raw implementation of this client that returns raw HTTP responses instead of parsed data.
+
+**Type:** `RawBaseElevenLabs`
+
+## Example Usage
+
+### Basic Client Initialization
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+```
+
+### Custom Configuration
+
+```python
+from elevenlabs import ElevenLabs
+import httpx
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+    timeout=300,  # 5 minutes
+    headers={"X-Custom-Header": "value"},
+)
+```
+
+### Using Environment Variables
+
+```python
+import os
+from elevenlabs import ElevenLabs
+
+# Set the API key in your environment
+os.environ["ELEVENLABS_API_KEY"] = "your_api_key"
+
+# Client will automatically use the environment variable
+client = ElevenLabs()
+```
+
+### Accessing API Endpoints
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Generate speech from text
+audio = client.text_to_speech.convert(
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    text="Hello, world!"
+)
+
+# Get available voices
+voices = client.voices.get_all()
+
+# Check usage statistics
+usage = client.usage.get_character_stats()
+```
+
+### Using Custom HTTP Client
+
+```python
+import httpx
+from elevenlabs import ElevenLabs
+
+# Create a custom httpx client with specific configuration
+custom_client = httpx.Client(
+    timeout=300,
+    limits=httpx.Limits(max_keepalive_connections=5)
+)
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+    httpx_client=custom_client
+)
+```

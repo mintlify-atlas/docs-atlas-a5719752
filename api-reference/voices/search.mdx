@@ -1,0 +1,249 @@
+---
+title: 'Search Voices'
+description: 'List and search available voices with filtering and pagination'
+icon: 'magnifying-glass'
+---
+
+## Overview
+
+The `voices.search()` method retrieves a list of all available voices for a user with support for search, filtering, sorting, and pagination.
+
+## Method Signature
+
+```python
+client.voices.search(
+    next_page_token: Optional[str] = None,
+    page_size: Optional[int] = None,
+    search: Optional[str] = None,
+    sort: Optional[str] = None,
+    sort_direction: Optional[str] = None,
+    voice_type: Optional[str] = None,
+    category: Optional[str] = None,
+    fine_tuning_state: Optional[str] = None,
+    collection_id: Optional[str] = None,
+    include_total_count: Optional[bool] = None,
+    voice_ids: Optional[Union[str, Sequence[str]]] = None,
+    request_options: Optional[RequestOptions] = None
+) -> GetVoicesV2Response
+```
+
+## Parameters
+
+<ParamField name="next_page_token" type="str" optional>
+  The next page token to use for pagination. Returned from the previous request. Use this in combination with the `has_more` flag for reliable pagination.
+</ParamField>
+
+<ParamField name="page_size" type="int" optional default="10">
+  How many voices to return at maximum. Cannot exceed 100. Page 0 may include more voices due to default voices being included.
+</ParamField>
+
+<ParamField name="search" type="str" optional>
+  Search term to filter voices by. Searches in name, description, labels, and category.
+</ParamField>
+
+<ParamField name="sort" type="str" optional>
+  Which field to sort by. Options:
+  - `created_at_unix` - Sort by creation date (may not be available for older voices)
+  - `name` - Sort by voice name
+</ParamField>
+
+<ParamField name="sort_direction" type="str" optional>
+  Direction to sort the voices. Options:
+  - `asc` - Ascending order
+  - `desc` - Descending order
+</ParamField>
+
+<ParamField name="voice_type" type="str" optional>
+  Type of voice to filter by. Options:
+  - `personal` - Personal voices
+  - `community` - Community voices
+  - `default` - Default voices
+  - `workspace` - Workspace voices
+  - `non-default` - All except default voices
+  - `saved` - Non-default voices plus default voices added to a collection
+</ParamField>
+
+<ParamField name="category" type="str" optional>
+  Category of voice to filter by. Options:
+  - `premade` - Pre-made voices
+  - `cloned` - Cloned voices
+  - `generated` - Generated voices
+  - `professional` - Professional voices
+</ParamField>
+
+<ParamField name="fine_tuning_state" type="str" optional>
+  State of the voice's fine tuning to filter by. Applicable only to professional voice clones. Options:
+  - `draft`
+  - `not_verified`
+  - `not_started`
+  - `queued`
+  - `fine_tuning`
+  - `fine_tuned`
+  - `failed`
+  - `delayed`
+</ParamField>
+
+<ParamField name="collection_id" type="str" optional>
+  Collection ID to filter voices by.
+</ParamField>
+
+<ParamField name="include_total_count" type="bool" optional default="false">
+  Whether to include the total count of voices found in the response. 
+  
+  <Note>
+    The `total_count` value is a live snapshot and may change between requests as users create, modify, or delete voices. For pagination, rely on the `has_more` flag instead. Only enable this when you actually need the total count (e.g., for display purposes), as it incurs a performance cost.
+  </Note>
+</ParamField>
+
+<ParamField name="voice_ids" type="Union[str, Sequence[str]]" optional>
+  Voice IDs to lookup by. Maximum 100 voice IDs.
+</ParamField>
+
+<ParamField name="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+## Returns
+
+<ResponseField name="GetVoicesV2Response" type="object">
+  Response containing the list of voices and pagination information.
+  
+  <Expandable title="Response Fields">
+    <ResponseField name="voices" type="List[Voice]" required>
+      The list of voices matching the query. Each voice contains:
+      - `voice_id` - The ID of the voice
+      - `name` - The name of the voice
+      - `category` - The category of the voice
+      - `description` - Description of the voice
+      - `labels` - Labels associated with the voice
+      - `preview_url` - URL to preview the voice
+      - `settings` - Voice settings configuration
+      - Additional metadata fields
+    </ResponseField>
+    
+    <ResponseField name="has_more" type="bool" required>
+      Indicates whether there are more voices available in subsequent pages. Use this flag (and `next_page_token`) for reliable pagination instead of relying on `total_count`.
+    </ResponseField>
+    
+    <ResponseField name="total_count" type="int" required>
+      The total count of voices matching the query. This is a live snapshot and may change between requests.
+    </ResponseField>
+    
+    <ResponseField name="next_page_token" type="str" optional>
+      Token to retrieve the next page of results. Pass this value to the next request to continue pagination. Returns `None` if there are no more results.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Search
+
+Search for all available voices:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.voices.search()
+print(f"Found {len(response.voices)} voices")
+for voice in response.voices:
+    print(f"- {voice.name} ({voice.voice_id})")
+```
+
+### Search with Filters
+
+Search for cloned voices with pagination:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.voices.search(
+    category="cloned",
+    page_size=20,
+    sort="created_at_unix",
+    sort_direction="desc"
+)
+
+print(f"Found {response.total_count} cloned voices")
+for voice in response.voices:
+    print(f"- {voice.name}: {voice.description}")
+```
+
+### Search by Text
+
+Search for voices matching a specific term:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.voices.search(
+    search="british accent",
+    voice_type="default"
+)
+
+for voice in response.voices:
+    print(f"Found: {voice.name}")
+    if voice.labels:
+        print(f"  Labels: {voice.labels}")
+```
+
+### Pagination
+
+Iterate through all voices using pagination:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+all_voices = []
+next_token = None
+
+while True:
+    response = client.voices.search(
+        next_page_token=next_token,
+        page_size=100
+    )
+    
+    all_voices.extend(response.voices)
+    
+    if not response.has_more:
+        break
+    
+    next_token = response.next_page_token
+
+print(f"Retrieved {len(all_voices)} total voices")
+```
+
+### Filter by Voice IDs
+
+Retrieve specific voices by their IDs:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice_ids = [
+    "21m00Tcm4TlvDq8ikWAM",
+    "AZnzlk1XvdvUeBnXmlld",
+    "EXAVITQu4vr4xnSDxMaL"
+]
+
+response = client.voices.search(voice_ids=voice_ids)
+
+for voice in response.voices:
+    print(f"{voice.voice_id}: {voice.name}")
+```
+
+## Related Methods
+
+- [Get Voice](/api-reference/voices/get) - Retrieve metadata for a specific voice
+- [Clone Voice](/api-reference/voices/clone) - Create an instant voice clone
+- [Voice Settings](/api-reference/voices/settings) - Manage voice settings

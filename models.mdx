@@ -1,0 +1,361 @@
+---
+title: Models
+description: Available text-to-speech models and their capabilities
+---
+
+ElevenLabs offers multiple state-of-the-art TTS models, each optimized for different use cases, languages, and performance requirements.
+
+## Listing Available Models
+
+Retrieve all available models for your account:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+models = client.models.list()
+
+for model in models:
+    print(f"Model: {model.model_id}")
+    print(f"Name: {model.name}")
+    print(f"Languages: {len(model.languages)} supported")
+    print(f"Can do TTS: {model.can_do_text_to_speech}")
+    print("---")
+```
+
+## Main Models Overview
+
+ElevenLabs provides four main TTS models, each with unique characteristics:
+
+<CardGroup cols={2}>
+  <Card title="Eleven v3" icon="star">
+    **Model ID:** `eleven_v3`
+    
+    Dramatic delivery and performances with support for 70+ languages and natural multi-speaker dialogue.
+  </Card>
+  
+  <Card title="Eleven Multilingual v2" icon="globe">
+    **Model ID:** `eleven_multilingual_v2`
+    
+    Excels in stability, language diversity, and accent accuracy across 29 languages. Recommended for most use cases.
+  </Card>
+  
+  <Card title="Eleven Flash v2.5" icon="bolt">
+    **Model ID:** `eleven_flash_v2_5`
+    
+    Ultra-low latency with support for 32 languages. Faster model at 50% lower price per character.
+  </Card>
+  
+  <Card title="Eleven Turbo v2.5" icon="gauge-high">
+    **Model ID:** `eleven_turbo_v2_5`
+    
+    Good balance of quality and latency, ideal for developer use cases where speed is crucial. Supports 32 languages.
+  </Card>
+</CardGroup>
+
+## Eleven v3
+
+The latest generation model with dramatic performances and extensive language support.
+
+```python
+audio = client.text_to_speech.convert(
+    text="Experience the most dramatic and lifelike performances.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_v3",
+    output_format="mp3_44100_128"
+)
+```
+
+### Key Features
+
+<AccordionGroup>
+  <Accordion title="Dramatic Delivery">
+    Eleven v3 excels at emotional expression and dramatic performances, making it ideal for:
+    - Audiobook narration
+    - Character voices
+    - Storytelling
+    - Expressive dialogue
+  </Accordion>
+
+  <Accordion title="70+ Languages">
+    The most multilingual model with support for over 70 languages, providing global reach for your applications.
+  </Accordion>
+
+  <Accordion title="Multi-Speaker Support">
+    Natural multi-speaker dialogue capabilities for:
+    - Conversational AI
+    - Podcast generation
+    - Interview simulations
+    - Interactive narratives
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+Eleven v3 may have higher latency compared to Flash or Turbo models. Not recommended for real-time streaming applications where low latency is critical.
+</Warning>
+
+## Eleven Multilingual v2
+
+The recommended model for most production use cases, balancing quality, stability, and language support.
+
+```python
+audio = client.text_to_speech.convert(
+    text="The first move is what sets everything in motion.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",
+    output_format="mp3_44100_128"
+)
+```
+
+### Key Features
+
+- **Stability:** Consistent voice quality across generations
+- **Accuracy:** Excellent accent and pronunciation accuracy
+- **29 Languages:** Broad language support for global applications
+- **Reliability:** Proven performance in production environments
+
+### Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Content Creation">
+    - Video voiceovers
+    - E-learning modules
+    - Marketing materials
+    - Product demos
+  </Card>
+  
+  <Card title="Applications">
+    - Mobile apps
+    - Web applications
+    - IVR systems
+    - Accessibility tools
+  </Card>
+</CardGroup>
+
+## Eleven Flash v2.5
+
+Ultra-low latency model optimized for speed and cost efficiency.
+
+```python
+audio = client.text_to_speech.convert(
+    text="Fast generation with minimal latency.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_flash_v2_5",
+    output_format="mp3_22050_32"  # Lower format for even faster streaming
+)
+```
+
+### Key Features
+
+- **Ultra-Low Latency:** Fastest generation times
+- **Cost Effective:** 50% lower price per character
+- **32 Languages:** Broad language support
+- **Optimized for Streaming:** Ideal for real-time applications
+
+### Best For
+
+<Steps>
+  <Step title="Real-Time Streaming">
+    Low-latency audio streaming for conversational AI and live applications
+  </Step>
+  
+  <Step title="High-Volume Processing">
+    Batch processing large amounts of text with cost constraints
+  </Step>
+  
+  <Step title="Prototyping">
+    Rapid development and testing with quick iteration cycles
+  </Step>
+</Steps>
+
+```python
+# Optimized for streaming
+audio_stream = client.text_to_speech.stream(
+    text="Real-time streaming with Flash v2.5",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_flash_v2_5",
+    optimize_streaming_latency=4
+)
+```
+
+## Eleven Turbo v2.5
+
+Balanced model providing excellent quality-to-speed ratio for developer applications.
+
+```python
+audio = client.text_to_speech.convert(
+    text="Great balance of quality and latency.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_turbo_v2_5",
+    output_format="mp3_44100_128"
+)
+```
+
+### Key Features
+
+- **Balanced Performance:** Good quality with reduced latency
+- **Developer-Focused:** Optimized for common development scenarios
+- **32 Languages:** Wide language coverage
+- **Versatile:** Suitable for most application types
+
+### Ideal Use Cases
+
+- **Conversational AI:** Chatbots and virtual assistants
+- **Gaming:** Character dialogue and narration
+- **Notifications:** Audio alerts and announcements
+- **Interactive Systems:** IVR and phone systems
+
+## Model Comparison
+
+<ResponseField name="Model Characteristics" type="comparison">
+  | Feature | v3 | Multilingual v2 | Flash v2.5 | Turbo v2.5 |
+  |---------|----|-----------------|-----------|-----------|
+  | **Quality** | Highest | High | Good | High |
+  | **Latency** | Higher | Medium | Lowest | Low |
+  | **Languages** | 70+ | 29 | 32 | 32 |
+  | **Price** | Standard | Standard | 50% lower | Standard |
+  | **Best For** | Dramatic content | Production | Real-time/Cost | Developer apps |
+  | **Multi-speaker** | Yes | Limited | No | Limited |
+</ResponseField>
+
+## Choosing the Right Model
+
+<Steps>
+  <Step title="Assess Your Requirements">
+    Determine your priorities: quality, latency, cost, or language support
+  </Step>
+  
+  <Step title="Consider Your Use Case">
+    - **Content creation** → Multilingual v2 or v3
+    - **Real-time streaming** → Flash v2.5 or Turbo v2.5
+    - **High-volume processing** → Flash v2.5
+    - **Dramatic narration** → v3
+  </Step>
+  
+  <Step title="Test and Compare">
+    ```python
+    models_to_test = [
+        "eleven_v3",
+        "eleven_multilingual_v2",
+        "eleven_flash_v2_5",
+        "eleven_turbo_v2_5"
+    ]
+    
+    for model_id in models_to_test:
+        audio = client.text_to_speech.convert(
+            text="Compare model outputs.",
+            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            model_id=model_id
+        )
+        # Save and compare
+        save(audio, f"output_{model_id}.mp3")
+    ```
+  </Step>
+</Steps>
+
+## Language Support
+
+Check which languages a model supports:
+
+```python
+models = client.models.list()
+
+for model in models:
+    if model.model_id == "eleven_v3":
+        print(f"Languages supported by {model.name}:")
+        for lang in model.languages:
+            print(f"  - {lang.name} ({lang.language_id})")
+```
+
+## Model-Specific Settings
+
+Some models support additional parameters:
+
+```python
+# Using language code enforcement
+audio = client.text_to_speech.convert(
+    text="Bonjour le monde",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",
+    language_code="fr"  # Enforce French
+)
+
+# Optimizing for streaming with Turbo
+audio_stream = client.text_to_speech.stream(
+    text="Optimized streaming.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_turbo_v2_5",
+    optimize_streaming_latency=3
+)
+```
+
+## Async Model Operations
+
+List models asynchronously:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+client = AsyncElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+async def print_models():
+    models = await client.models.list()
+    for model in models:
+        print(f"{model.name}: {model.model_id}")
+
+asyncio.run(print_models())
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Production Deployments">
+    - Use **Multilingual v2** for stable, production-ready applications
+    - Test with your actual content before committing to a model
+    - Monitor usage and costs across different models
+    - Consider fallback strategies if a model is unavailable
+  </Accordion>
+
+  <Accordion title="Real-Time Applications">
+    - Choose **Flash v2.5** or **Turbo v2.5** for low-latency requirements
+    - Combine with `optimize_streaming_latency` parameter
+    - Use lower output formats (22050Hz, 32kbps) to reduce bandwidth
+    - Implement proper error handling and retry logic
+  </Accordion>
+
+  <Accordion title="Cost Optimization">
+    - Use **Flash v2.5** for high-volume processing (50% cost savings)
+    - Cache generated audio when possible
+    - Monitor character usage across models
+    - Batch requests when real-time isn't required
+  </Accordion>
+
+  <Accordion title="Quality Maximization">
+    - Use **v3** for the highest quality and dramatic expression
+    - Use higher output formats (44100Hz, 128kbps+)
+    - Fine-tune voice settings for each model
+    - Test different models with your specific content
+  </Accordion>
+</AccordionGroup>
+
+## Additional Resources
+
+<CardGroup cols={2}>
+  <Card title="Models Documentation" icon="book" href="https://elevenlabs.io/docs/models">
+    Detailed information about all models and languages
+  </Card>
+  
+  <Card title="Voice Lab" icon="flask" href="https://elevenlabs.io/voice-lab">
+    Try different models with various voices
+  </Card>
+</CardGroup>
+
+<Note>
+For the most up-to-date information about model capabilities, pricing, and language support, visit the [ElevenLabs Models documentation](https://elevenlabs.io/docs/models).
+</Note>

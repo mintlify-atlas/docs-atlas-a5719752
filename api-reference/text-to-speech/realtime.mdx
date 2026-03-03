@@ -1,0 +1,199 @@
+---
+title: "RealtimeTextToSpeechClient"
+description: "WebSocket-based real-time text-to-speech conversion with input streaming"
+---
+
+## Overview
+
+The `RealtimeTextToSpeechClient` extends the standard `TextToSpeechClient` with WebSocket-based real-time text-to-speech capabilities. This allows you to stream text input and receive audio output in real-time, making it ideal for interactive applications like chatbots, voice assistants, and live narration.
+
+## Method Signature
+
+```python
+client.text_to_speech.convert_realtime(
+    voice_id: str,
+    text: Iterator[str],
+    model_id: Optional[str] = None,
+    output_format: Optional[str] = "mp3_44100_128",
+    voice_settings: Optional[VoiceSettings] = None,
+    request_options: Optional[RequestOptions] = None,
+) -> Iterator[bytes]
+```
+
+## Parameters
+
+<ParamField path="voice_id" type="str" required>
+  Voice ID to be used. You can use `https://api.elevenlabs.io/v1/voices` to list all available voices.
+</ParamField>
+
+<ParamField path="text" type="Iterator[str]" required>
+  An iterator of text chunks that will get converted into speech in real-time. The text is automatically chunked at natural breakpoints (punctuation, spaces) for optimal speech generation.
+</ParamField>
+
+<ParamField path="model_id" type="str" default="None">
+  Identifier of the model that will be used. You can query available models using `GET /v1/models`. The model needs to have support for text to speech, which you can check using the `can_do_text_to_speech` property.
+</ParamField>
+
+<ParamField path="output_format" type="str" default="mp3_44100_128">
+  Output format of the generated audio. Formatted as `codec_sample_rate_bitrate`. For example, an mp3 with 22.05kHz sample rate at 32kbps is represented as `mp3_22050_32`.
+</ParamField>
+
+<ParamField path="voice_settings" type="VoiceSettings" default="None">
+  Voice settings overriding stored settings for the given voice. They are applied only on the given request.
+  
+  **Properties:**
+  - `stability` (float): Stability setting (0.0 to 1.0)
+  - `similarity_boost` (float): Similarity boost setting (0.0 to 1.0)
+  - `style` (float): Style setting (0.0 to 1.0)
+  - `use_speaker_boost` (bool): Enable speaker boost
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions" default="None">
+  Request-specific configuration, such as custom headers.
+</ParamField>
+
+## Returns
+
+`Iterator[bytes]` - Real-time streaming audio data as base64-decoded bytes.
+
+## Example: Basic Usage
+
+```python
+from elevenlabs import ElevenLabs
+import typing
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+
+def get_text() -> typing.Iterator[str]:
+    yield "Hello, how are you?"
+    yield "I am fine, thank you."
+    yield "This is real-time text to speech."
+
+audio_stream = client.text_to_speech.convert_realtime(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    text=get_text(),
+    model_id="eleven_multilingual_v2",
+)
+
+# Save the audio to a file
+with open("realtime_output.mp3", "wb") as f:
+    for chunk in audio_stream:
+        f.write(chunk)
+```
+
+## Example: With Voice Settings
+
+```python
+from elevenlabs import ElevenLabs, VoiceSettings
+import typing
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+
+def get_text() -> typing.Iterator[str]:
+    yield "This speech has custom voice settings."
+    yield "Notice the stability and style parameters."
+
+audio_stream = client.text_to_speech.convert_realtime(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    text=get_text(),
+    model_id="eleven_multilingual_v2",
+    voice_settings=VoiceSettings(
+        stability=0.5,
+        similarity_boost=0.8,
+        style=0.6,
+        use_speaker_boost=True,
+    ),
+)
+
+with open("output.mp3", "wb") as f:
+    for chunk in audio_stream:
+        f.write(chunk)
+```
+
+## Example: Real-time Interactive Application
+
+```python
+from elevenlabs import ElevenLabs
+import typing
+import pyaudio
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+
+def stream_user_input() -> typing.Iterator[str]:
+    """Simulate streaming text from user input or an AI model"""
+    sentences = [
+        "Welcome to the interactive voice assistant.",
+        "I can convert text to speech in real-time.",
+        "This allows for natural, flowing conversations.",
+    ]
+    for sentence in sentences:
+        yield sentence
+
+# Set up audio playback
+p = pyaudio.PyAudio()
+audio_stream = p.open(
+    format=pyaudio.paInt16,
+    channels=1,
+    rate=44100,
+    output=True
+)
+
+# Stream real-time TTS
+tts_stream = client.text_to_speech.convert_realtime(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    text=stream_user_input(),
+    model_id="eleven_multilingual_v2",
+    output_format="mp3_44100_128",
+)
+
+for audio_chunk in tts_stream:
+    audio_stream.write(audio_chunk)
+
+audio_stream.stop_stream()
+audio_stream.close()
+p.terminate()
+```
+
+## Text Chunking
+
+The `convert_realtime()` method automatically chunks your input text at natural breakpoints using the internal `text_chunker()` function. This function splits text at:
+
+- Sentence endings: `.`, `?`, `!`
+- Pauses: `,`, `;`, `:`
+- Dashes and parentheses: `—`, `-`, `(`, `)`, `[`, `]`, `}`
+- Spaces
+
+This ensures smooth, natural-sounding speech generation even when streaming text.
+
+## WebSocket Connection
+
+Under the hood, `convert_realtime()` establishes a WebSocket connection to:
+
+```
+wss://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream-input
+```
+
+The connection includes:
+- Model ID and output format in query parameters
+- Authentication via headers
+- JSON message protocol for text chunks and audio responses
+
+## Use Cases
+
+- **Chatbots and voice assistants**: Stream AI-generated responses as they're created
+- **Live narration**: Convert real-time text (e.g., from live captions) to speech
+- **Interactive storytelling**: Generate speech for dynamic, user-driven narratives
+- **Accessibility tools**: Provide real-time audio feedback for text input
+
+## Notes
+
+- The realtime client requires a WebSocket connection, which is automatically managed
+- Audio chunks are returned as they become available, enabling very low latency
+- The connection will automatically close when all text has been processed
+- Error handling is built-in via `ApiError` exceptions

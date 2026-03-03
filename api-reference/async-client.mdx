@@ -1,0 +1,480 @@
+---
+title: "AsyncElevenLabs Client"
+description: "Async client class for asynchronous ElevenLabs API operations"
+---
+
+## Overview
+
+The `AsyncElevenLabs` client class provides asynchronous access to the ElevenLabs API. It's designed for use with Python's `async`/`await` syntax, making it ideal for applications that need to handle multiple concurrent API requests efficiently.
+
+## Initialization
+
+```python
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+```
+
+### Parameters
+
+<ParamField path="api_key" type="str" optional>
+  Your ElevenLabs API key. If not provided, the client will attempt to read from the `ELEVENLABS_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str" optional>
+  The base URL to use for requests from the client. Use this to override the default API endpoint.
+</ParamField>
+
+<ParamField path="environment" type="ElevenLabsEnvironment" default="ElevenLabsEnvironment.PRODUCTION">
+  The environment to use for requests from the client. Import with:
+  ```python
+  from elevenlabs.environment import ElevenLabsEnvironment
+  ```
+</ParamField>
+
+<ParamField path="headers" type="Dict[str, str]" optional>
+  Additional headers to send with every request.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="240">
+  The timeout to be used, in seconds, for requests. By default the timeout is 240 seconds, unless a custom httpx client is used, in which case this default is not enforced.
+</ParamField>
+
+<ParamField path="follow_redirects" type="bool" default="true">
+  Whether the default httpx client follows redirects or not. This is irrelevant if a custom httpx client is passed in.
+</ParamField>
+
+<ParamField path="httpx_client" type="httpx.AsyncClient" optional>
+  The httpx async client to use for making requests. A preconfigured async client is used by default, however this is useful should you want to pass in any custom httpx configuration.
+</ParamField>
+
+## Properties
+
+The async client provides access to various API endpoints through properties. All methods on these clients are asynchronous and must be awaited:
+
+### history
+
+```python
+await client.history
+```
+
+Access to the async History API for retrieving and managing generated audio history.
+
+**Type:** `AsyncHistoryClient`
+
+### text_to_speech
+
+```python
+await client.text_to_speech
+```
+
+Access to the async Text-to-Speech API for converting text to speech audio.
+
+**Type:** `AsyncTextToSpeechClient`
+
+### text_to_sound_effects
+
+```python
+await client.text_to_sound_effects
+```
+
+Access to the async Text-to-Sound Effects API for generating sound effects from text descriptions.
+
+**Type:** `AsyncTextToSoundEffectsClient`
+
+### text_to_dialogue
+
+```python
+await client.text_to_dialogue
+```
+
+Access to the async Text-to-Dialogue API for creating multi-voice dialogues.
+
+**Type:** `AsyncTextToDialogueClient`
+
+### speech_to_speech
+
+```python
+await client.speech_to_speech
+```
+
+Access to the async Speech-to-Speech API for voice conversion.
+
+**Type:** `AsyncSpeechToSpeechClient`
+
+### speech_to_text
+
+```python
+await client.speech_to_text
+```
+
+Access to the async Speech-to-Text API for transcribing audio to text.
+
+**Type:** `AsyncSpeechToTextClient`
+
+### text_to_voice
+
+```python
+await client.text_to_voice
+```
+
+Access to the async Text-to-Voice API for creating custom voices.
+
+**Type:** `AsyncTextToVoiceClient`
+
+### voices
+
+```python
+await client.voices
+```
+
+Access to the async Voices API for managing and retrieving voice models.
+
+**Type:** `AsyncVoicesClient`
+
+### models
+
+```python
+await client.models
+```
+
+Access to the async Models API for retrieving available AI models.
+
+**Type:** `AsyncModelsClient`
+
+### user
+
+```python
+await client.user
+```
+
+Access to the async User API for managing user account information.
+
+**Type:** `AsyncUserClient`
+
+### usage
+
+```python
+await client.usage
+```
+
+Access to the async Usage API for tracking API usage and quotas.
+
+**Type:** `AsyncUsageClient`
+
+### samples
+
+```python
+await client.samples
+```
+
+Access to the async Samples API for managing voice samples.
+
+**Type:** `AsyncSamplesClient`
+
+### audio_isolation
+
+```python
+await client.audio_isolation
+```
+
+Access to the async Audio Isolation API for separating audio sources.
+
+**Type:** `AsyncAudioIsolationClient`
+
+### audio_native
+
+```python
+await client.audio_native
+```
+
+Access to the async Audio Native API for creating audio-native projects.
+
+**Type:** `AsyncAudioNativeClient`
+
+### dubbing
+
+```python
+await client.dubbing
+```
+
+Access to the async Dubbing API for video and audio dubbing.
+
+**Type:** `AsyncDubbingClient`
+
+### studio
+
+```python
+await client.studio
+```
+
+Access to the async Studio API for managing studio projects.
+
+**Type:** `AsyncStudioClient`
+
+### pronunciation_dictionaries
+
+```python
+await client.pronunciation_dictionaries
+```
+
+Access to the async Pronunciation Dictionaries API for managing custom pronunciations.
+
+**Type:** `AsyncPronunciationDictionariesClient`
+
+### service_accounts
+
+```python
+await client.service_accounts
+```
+
+Access to the async Service Accounts API for managing service accounts.
+
+**Type:** `AsyncServiceAccountsClient`
+
+### webhooks
+
+```python
+await client.webhooks
+```
+
+Access to the async Webhooks API for managing webhook subscriptions.
+
+**Type:** `AsyncWebhooksClient`
+
+### forced_alignment
+
+```python
+await client.forced_alignment
+```
+
+Access to the async Forced Alignment API for audio-text alignment.
+
+**Type:** `AsyncForcedAlignmentClient`
+
+### conversational_ai
+
+```python
+await client.conversational_ai
+```
+
+Access to the async Conversational AI API for building conversational agents.
+
+**Type:** `AsyncConversationalAiClient`
+
+### music
+
+```python
+await client.music
+```
+
+Access to the async Music API for generating AI music.
+
+**Type:** `AsyncMusicClient`
+
+### tokens
+
+```python
+await client.tokens
+```
+
+Access to the async Tokens API for managing authentication tokens.
+
+**Type:** `AsyncTokensClient`
+
+### workspace
+
+```python
+await client.workspace
+```
+
+Access to the async Workspace API for managing workspace settings.
+
+**Type:** `AsyncWorkspaceClient`
+
+### with_raw_response
+
+```python
+client.with_raw_response
+```
+
+Retrieves a raw implementation of this client that returns raw HTTP responses instead of parsed data.
+
+**Type:** `AsyncRawBaseElevenLabs`
+
+## Example Usage
+
+### Basic Async Client Usage
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+async def main():
+    client = AsyncElevenLabs(
+        api_key="YOUR_API_KEY",
+    )
+    
+    # Use the client
+    voices = await client.voices.get_all()
+    print(voices)
+
+asyncio.run(main())
+```
+
+### Concurrent API Requests
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+async def main():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    # Make multiple concurrent requests
+    results = await asyncio.gather(
+        client.voices.get_all(),
+        client.models.get_all(),
+        client.user.get_subscription(),
+    )
+    
+    voices, models, subscription = results
+    print(f"Voices: {len(voices)}")
+    print(f"Models: {len(models)}")
+    print(f"Subscription: {subscription}")
+
+asyncio.run(main())
+```
+
+### Async Text-to-Speech Generation
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+async def generate_speech():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    audio = await client.text_to_speech.convert(
+        voice_id="21m00Tcm4TlvDq8ikWAM",
+        text="Hello from async ElevenLabs!"
+    )
+    
+    # Save the audio
+    with open("output.mp3", "wb") as f:
+        f.write(audio)
+
+asyncio.run(generate_speech())
+```
+
+### Using Environment Variables
+
+```python
+import os
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+# Set the API key in your environment
+os.environ["ELEVENLABS_API_KEY"] = "your_api_key"
+
+async def main():
+    # Client will automatically use the environment variable
+    client = AsyncElevenLabs()
+    
+    voices = await client.voices.get_all()
+    print(voices)
+
+asyncio.run(main())
+```
+
+### Custom HTTP Client Configuration
+
+```python
+import asyncio
+import httpx
+from elevenlabs import AsyncElevenLabs
+
+async def main():
+    # Create a custom async httpx client
+    custom_client = httpx.AsyncClient(
+        timeout=300,
+        limits=httpx.Limits(max_keepalive_connections=10)
+    )
+    
+    client = AsyncElevenLabs(
+        api_key="YOUR_API_KEY",
+        httpx_client=custom_client
+    )
+    
+    try:
+        voices = await client.voices.get_all()
+        print(voices)
+    finally:
+        await custom_client.aclose()
+
+asyncio.run(main())
+```
+
+### Batch Processing with Async
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+async def generate_multiple_speeches(texts: list[str]):
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    async def generate_one(text: str, index: int):
+        audio = await client.text_to_speech.convert(
+            voice_id="21m00Tcm4TlvDq8ikWAM",
+            text=text
+        )
+        
+        filename = f"output_{index}.mp3"
+        with open(filename, "wb") as f:
+            f.write(audio)
+        
+        return filename
+    
+    # Generate all speeches concurrently
+    tasks = [generate_one(text, i) for i, text in enumerate(texts)]
+    filenames = await asyncio.gather(*tasks)
+    
+    print(f"Generated {len(filenames)} audio files")
+    return filenames
+
+texts = [
+    "Hello, world!",
+    "This is the second speech.",
+    "And this is the third one."
+]
+
+asyncio.run(generate_multiple_speeches(texts))
+```
+
+### Context Manager Usage
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+async def main():
+    async with AsyncElevenLabs(api_key="YOUR_API_KEY") as client:
+        voices = await client.voices.get_all()
+        print(voices)
+
+asyncio.run(main())
+```
+
+## Performance Benefits
+
+The async client is particularly beneficial when:
+
+- Making multiple API requests that can run concurrently
+- Building web applications with async frameworks (FastAPI, Sanic, etc.)
+- Processing large batches of text-to-speech conversions
+- Integrating with other async libraries and services
+
+Compared to the synchronous client, the async client can significantly reduce total execution time when handling multiple requests by running them concurrently rather than sequentially.

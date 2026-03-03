@@ -1,0 +1,441 @@
+---
+title: "Webhooks"
+description: "Integrate and verify ElevenLabs webhooks in your application"
+---
+
+## Overview
+
+Webhooks allow ElevenLabs to send real-time notifications to your application when certain events occur. This is useful for:
+
+- Receiving notifications when audio generation is complete
+- Tracking usage and billing events
+- Monitoring voice cloning progress
+- Staying informed about account changes
+
+## Setting Up Webhooks
+
+### Configure Your Endpoint
+
+First, create an endpoint in your application to receive webhook events:
+
+```python
+from flask import Flask, request
+from elevenlabs import ElevenLabs, BadRequestError
+
+app = Flask(__name__)
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+@app.route("/webhook", methods=["POST"])
+def handle_webhook():
+    # Get the raw body and signature
+    raw_body = request.get_data(as_text=True)
+    signature = request.headers.get("elevenlabs-signature")
+    
+    try:
+        # Verify and construct the event
+        event = client.webhooks.construct_event(
+            rawBody=raw_body,
+            sig_header=signature,
+            secret="your_webhook_secret"
+        )
+        
+        # Process the event
+        print(f"Received event: {event}")
+        
+        return {"success": True}, 200
+    except BadRequestError as e:
+        print(f"Webhook verification failed: {e.body.error}")
+        return {"error": "Invalid signature"}, 400
+```
+
+### FastAPI Example
+
+```python
+from fastapi import FastAPI, Request, HTTPException
+from elevenlabs import ElevenLabs, BadRequestError
+
+app = FastAPI()
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+@app.post("/webhook")
+async def handle_webhook(request: Request):
+    # Get raw body and signature
+    raw_body = await request.body()
+    signature = request.headers.get("elevenlabs-signature")
+    
+    try:
+        event = client.webhooks.construct_event(
+            rawBody=raw_body.decode("utf-8"),
+            sig_header=signature,
+            secret="your_webhook_secret"
+        )
+        
+        # Process the event
+        await process_webhook_event(event)
+        
+        return {"success": True}
+    except BadRequestError as e:
+        raise HTTPException(status_code=400, detail=str(e.body.error))
+```
+
+## Webhook Signature Verification
+
+The SDK provides the `construct_event` method to verify webhook signatures and prevent unauthorized requests.
+
+### How It Works
+
+ElevenLabs signs each webhook with a secret key and includes:
+- A timestamp (`t=`) to prevent replay attacks
+- A signature hash (`v0=`) to verify authenticity
+
+```python
+from elevenlabs import ElevenLabs, BadRequestError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    event = client.webhooks.construct_event(
+        rawBody=request_body,  # Must be raw string, not parsed JSON
+        sig_header="t=1234567890,v0=hash_value",
+        secret="your_webhook_secret"
+    )
+    # Event is verified and safe to use
+    print(event)
+except BadRequestError as e:
+    # Signature verification failed
+    print(f"Error: {e.body.error}")
+```
+
+<ParamField path="rawBody" type="str" required>
+  The raw webhook request body as a string. **Do not parse it as JSON first.**
+</ParamField>
+
+<ParamField path="sig_header" type="str" required>
+  The `elevenlabs-signature` header from the webhook request.
+</ParamField>
+
+<ParamField path="secret" type="str" required>
+  Your webhook secret from the ElevenLabs dashboard.
+</ParamField>
+
+### Verification Errors
+
+The `construct_event` method raises `BadRequestError` for the following issues:
+
+<AccordionGroup>
+  <Accordion title="Missing signature header" icon="xmark">
+    The `elevenlabs-signature` header was not included in the request.
+
+    ```python
+    # Error: "Missing signature header"
+    ```
+  </Accordion>
+
+  <Accordion title="Webhook secret not configured" icon="key">
+    No secret was provided to the verification function.
+
+    ```python
+    # Error: "Webhook secret not configured"
+    ```
+  </Accordion>
+
+  <Accordion title="Invalid signature format" icon="file-xmark">
+    The signature header doesn't contain the expected `t=` and `v0=` components.
+
+    ```python
+    # Error: "No signature hash found with expected scheme v0"
+    ```
+  </Accordion>
+
+  <Accordion title="Timestamp outside tolerance" icon="clock">
+    The webhook timestamp is older than 30 minutes, indicating a potential replay attack.
+
+    ```python
+    # Error: "Timestamp outside the tolerance zone"
+    ```
+  </Accordion>
+
+  <Accordion title="Signature mismatch" icon="shield-xmark">
+    The computed signature doesn't match the provided signature.
+
+    ```python
+    # Error: "Signature hash does not match the expected signature hash for payload"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Security Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Always verify signatures" icon="shield-check">
+    Never process webhook events without verifying the signature first.
+  </Card>
+  
+  <Card title="Use HTTPS" icon="lock">
+    Only accept webhooks over HTTPS to prevent man-in-the-middle attacks.
+  </Card>
+  
+  <Card title="Keep secrets secure" icon="key">
+    Store webhook secrets in environment variables, not in code.
+  </Card>
+  
+  <Card title="Handle replay attacks" icon="clock-rotate-left">
+    The 30-minute timestamp tolerance helps prevent replay attacks.
+  </Card>
+</CardGroup>
+
+## Processing Webhook Events
+
+Once verified, process the webhook payload based on the event type:
+
+```python
+def process_webhook_event(event: dict):
+    event_type = event.get("type")
+    
+    if event_type == "audio.generated":
+        handle_audio_generated(event)
+    elif event_type == "voice.cloned":
+        handle_voice_cloned(event)
+    elif event_type == "usage.threshold":
+        handle_usage_threshold(event)
+    else:
+        print(f"Unknown event type: {event_type}")
+
+def handle_audio_generated(event):
+    audio_id = event.get("data", {}).get("audio_id")
+    print(f"Audio {audio_id} has been generated")
+    # Your logic here
+
+def handle_voice_cloned(event):
+    voice_id = event.get("data", {}).get("voice_id")
+    print(f"Voice {voice_id} has been cloned")
+    # Your logic here
+
+def handle_usage_threshold(event):
+    threshold = event.get("data", {}).get("threshold")
+    print(f"Usage threshold reached: {threshold}%")
+    # Your logic here
+```
+
+## Async Webhook Handling
+
+The async client also supports webhook verification:
+
+```python
+from elevenlabs import AsyncElevenLabs, BadRequestError
+from fastapi import FastAPI, Request, HTTPException
+
+app = FastAPI()
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+@app.post("/webhook")
+async def handle_webhook(request: Request):
+    raw_body = await request.body()
+    signature = request.headers.get("elevenlabs-signature")
+    
+    try:
+        # Note: construct_event is synchronous even on async client
+        event = client.webhooks.construct_event(
+            rawBody=raw_body.decode("utf-8"),
+            sig_header=signature,
+            secret="your_webhook_secret"
+        )
+        
+        # Process asynchronously
+        await process_event_async(event)
+        
+        return {"success": True}
+    except BadRequestError as e:
+        raise HTTPException(status_code=400, detail=str(e.body.error))
+
+async def process_event_async(event: dict):
+    # Your async processing logic
+    event_type = event.get("type")
+    print(f"Processing event: {event_type}")
+```
+
+<Note>
+  The `construct_event` method is synchronous even when using `AsyncElevenLabs` because it only performs local computation (HMAC verification). No API calls are made.
+</Note>
+
+## Complete Example
+
+Here's a complete webhook handler with proper error handling:
+
+```python
+from flask import Flask, request, jsonify
+from elevenlabs import ElevenLabs, BadRequestError
+import os
+import logging
+
+app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+WEBHOOK_SECRET = os.getenv("ELEVENLABS_WEBHOOK_SECRET")
+
+@app.route("/webhook", methods=["POST"])
+def handle_webhook():
+    # Get raw body - important: don't parse as JSON first
+    raw_body = request.get_data(as_text=True)
+    signature = request.headers.get("elevenlabs-signature")
+    
+    # Verify webhook signature
+    try:
+        event = client.webhooks.construct_event(
+            rawBody=raw_body,
+            sig_header=signature,
+            secret=WEBHOOK_SECRET
+        )
+    except BadRequestError as e:
+        logger.error(f"Webhook signature verification failed: {e.body.error}")
+        return jsonify({"error": "Invalid signature"}), 400
+    except Exception as e:
+        logger.error(f"Unexpected error during webhook verification: {e}")
+        return jsonify({"error": "Internal server error"}), 500
+    
+    # Process the verified event
+    try:
+        event_type = event.get("type")
+        logger.info(f"Processing webhook event: {event_type}")
+        
+        if event_type == "audio.generated":
+            process_audio_generated(event)
+        elif event_type == "voice.cloned":
+            process_voice_cloned(event)
+        else:
+            logger.warning(f"Unhandled event type: {event_type}")
+        
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.error(f"Error processing webhook: {e}")
+        # Return 200 anyway to prevent retries for processing errors
+        return jsonify({"success": False, "error": str(e)}), 200
+
+def process_audio_generated(event):
+    data = event.get("data", {})
+    audio_id = data.get("audio_id")
+    logger.info(f"Audio generated: {audio_id}")
+    # Your business logic here
+
+def process_voice_cloned(event):
+    data = event.get("data", {})
+    voice_id = data.get("voice_id")
+    logger.info(f"Voice cloned: {voice_id}")
+    # Your business logic here
+
+if __name__ == "__main__":
+    app.run(port=5000)
+```
+
+## Testing Webhooks
+
+During development, use tools like ngrok to expose your local server:
+
+```bash
+# Install ngrok
+brew install ngrok  # macOS
+# or download from https://ngrok.com
+
+# Start your webhook server
+python webhook_server.py
+
+# In another terminal, expose it
+ngrok http 5000
+
+# Use the ngrok URL in ElevenLabs dashboard
+# Example: https://abc123.ngrok.io/webhook
+```
+
+<Tip>
+  Use ngrok or a similar tool to test webhooks locally without deploying to a server.
+</Tip>
+
+## Webhook Response Guidelines
+
+<AccordionGroup>
+  <Accordion title="Return 200 for successful processing" icon="check">
+    Always return a 200 status code when the webhook is processed successfully, even if your business logic encounters non-critical errors.
+  </Accordion>
+
+  <Accordion title="Return 400 for invalid signatures" icon="xmark">
+    Return 400 when signature verification fails to indicate a client error.
+  </Accordion>
+
+  <Accordion title="Handle retries gracefully" icon="rotate">
+    ElevenLabs will retry failed webhooks. Make your endpoint idempotent to handle duplicate events.
+  </Accordion>
+
+  <Accordion title="Respond quickly" icon="bolt">
+    Process webhooks asynchronously if needed. Respond within 30 seconds to avoid timeouts.
+  </Accordion>
+</AccordionGroup>
+
+<Warning>
+  **Important**: Always use the raw request body for signature verification. Parsing it as JSON first will cause verification to fail due to formatting differences.
+</Warning>
+
+## Troubleshooting
+
+### Signature Verification Fails
+
+1. Ensure you're passing the **raw** request body, not parsed JSON
+2. Check that your webhook secret matches the one in your dashboard
+3. Verify the signature header is being read correctly
+4. Check server time synchronization (timestamp tolerance is 30 minutes)
+
+### Missing Signature Header
+
+```python
+if not request.headers.get("elevenlabs-signature"):
+    logger.error("Missing elevenlabs-signature header")
+    return {"error": "No signature"}, 400
+```
+
+### Testing Signature Verification
+
+```python
+# Test with a known good signature
+def test_webhook_verification():
+    client = ElevenLabs(api_key="test_key")
+    
+    test_body = '{"type":"test","data":{}}'
+    test_secret = "test_secret"
+    
+    # Generate test signature
+    import hmac
+    import hashlib
+    import time
+    
+    timestamp = str(int(time.time()))
+    message = f"{timestamp}.{test_body}"
+    signature = hmac.new(
+        test_secret.encode(),
+        message.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    sig_header = f"t={timestamp},v0={signature}"
+    
+    try:
+        event = client.webhooks.construct_event(
+            rawBody=test_body,
+            sig_header=sig_header,
+            secret=test_secret
+        )
+        print("Verification successful!", event)
+    except BadRequestError as e:
+        print(f"Verification failed: {e.body.error}")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Learn about webhook-specific error handling
+  </Card>
+  <Card title="Async Client" icon="rotate" href="/guides/async-client">
+    Use webhooks with async frameworks
+  </Card>
+</CardGroup>

@@ -1,0 +1,396 @@
+---
+title: "Pronunciation Dictionaries"
+description: "Create and manage pronunciation dictionaries to control how words are spoken"
+---
+
+## Overview
+
+Pronunciation dictionaries allow you to customize how specific words or phrases are pronounced in your generated audio. This is particularly useful for:
+
+- Technical terms and abbreviations
+- Brand names and product names
+- Foreign words or names
+- Homographs that need different pronunciations based on context
+
+## Creating Dictionaries
+
+There are two ways to create pronunciation dictionaries: from rules or from a PLS file.
+
+### From Rules
+
+Create a dictionary by defining pronunciation rules programmatically:
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.pronunciation_dictionaries import (
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias,
+)
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+dictionary = client.pronunciation_dictionaries.create_from_rules(
+    rules=[
+        BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias(
+            string_to_replace="Thailand",
+            case_sensitive=True,
+            word_boundaries=True,
+            alias="tie-land",
+        )
+    ],
+    name="My Dictionary",
+)
+
+print(f"Created dictionary with ID: {dictionary.id}")
+```
+
+### From PLS File
+
+Create a dictionary from a lexicon PLS (Pronunciation Lexicon Specification) file:
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.core import File
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+with open("pronunciation.pls", "rb") as f:
+    dictionary = client.pronunciation_dictionaries.create_from_file(
+        name="Technical Terms",
+        description="Pronunciation rules for technical terminology",
+        file=File(content=f.read(), file_name="pronunciation.pls")
+    )
+
+print(f"Created dictionary: {dictionary.id}")
+```
+
+## Rule Types
+
+There are two types of pronunciation rules:
+
+### Alias Rules
+
+Replace a word or phrase with a different spelling:
+
+```python
+from elevenlabs.pronunciation_dictionaries import (
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias,
+)
+
+alias_rule = BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias(
+    string_to_replace="AI",
+    case_sensitive=True,
+    word_boundaries=True,
+    alias="Artificial Intelligence",
+)
+```
+
+<ParamField path="string_to_replace" type="str" required>
+  The word or phrase to be replaced.
+</ParamField>
+
+<ParamField path="alias" type="str" required>
+  The replacement text that will be pronounced instead.
+</ParamField>
+
+<ParamField path="case_sensitive" type="bool" default={false}>
+  Whether the match should be case-sensitive.
+</ParamField>
+
+<ParamField path="word_boundaries" type="bool" default={true}>
+  Whether to only match whole words (not parts of words).
+</ParamField>
+
+### Phoneme Rules
+
+Define pronunciation using phonetic alphabets (IPA or CMU):
+
+```python
+from elevenlabs.pronunciation_dictionaries import (
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Phoneme,
+)
+
+phoneme_rule = BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Phoneme(
+    string_to_replace="tomato",
+    case_sensitive=False,
+    word_boundaries=True,
+    phoneme="təˈmeɪtoʊ",
+    alphabet="ipa",  # or "cmu"
+)
+```
+
+<ParamField path="phoneme" type="str" required>
+  The phonetic pronunciation in IPA or CMU format.
+</ParamField>
+
+<ParamField path="alphabet" type="str" required>
+  The phonetic alphabet used: `"ipa"` or `"cmu"`.
+</ParamField>
+
+## Managing Dictionaries
+
+### List All Dictionaries
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.pronunciation_dictionaries.list(
+    page_size=30,
+    sort="creation_time_unix",
+    sort_direction="descending"
+)
+
+for dictionary in response.pronunciation_dictionaries:
+    print(f"{dictionary.name} (ID: {dictionary.id})")
+    print(f"  Created: {dictionary.created_at_unix}")
+```
+
+### Get Dictionary Details
+
+Retrieve a specific dictionary with all its rules:
+
+```python
+dictionary = client.pronunciation_dictionaries.get(
+    pronunciation_dictionary_id="21m00Tcm4TlvDq8ikWAM"
+)
+
+print(f"Dictionary: {dictionary.name}")
+print(f"Version: {dictionary.version_id}")
+print(f"Rules: {len(dictionary.rules)} rules defined")
+```
+
+### Update Dictionary Metadata
+
+Update the name or archive status without changing the rules:
+
+```python
+updated = client.pronunciation_dictionaries.update(
+    pronunciation_dictionary_id="21m00Tcm4TlvDq8ikWAM",
+    name="Updated Dictionary Name",
+    archived=False
+)
+
+print(f"Updated: {updated.name}")
+```
+
+### Download Dictionary
+
+Download a dictionary version as a PLS file:
+
+```python
+pls_content = client.pronunciation_dictionaries.download(
+    dictionary_id="dictionary_id",
+    version_id="version_id"
+)
+
+with open("downloaded.pls", "wb") as f:
+    for chunk in pls_content:
+        f.write(chunk)
+```
+
+## Working with Rules
+
+Once you have a dictionary, you can manage its rules:
+
+### Add Rules
+
+```python
+from elevenlabs.pronunciation_dictionaries import (
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias,
+)
+
+response = client.pronunciation_dictionaries.rules.add(
+    pronunciation_dictionary_id="dictionary_id",
+    rules=[
+        BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias(
+            string_to_replace="API",
+            alias="A P I",
+            case_sensitive=True,
+        )
+    ]
+)
+
+print(f"New version: {response.version_id}")
+```
+
+### Remove Rules
+
+```python
+response = client.pronunciation_dictionaries.rules.remove(
+    pronunciation_dictionary_id="dictionary_id",
+    rule_strings=["API", "SDK"]
+)
+
+print(f"Rules removed. New version: {response.version_id}")
+```
+
+## Using with Text-to-Speech
+
+Apply pronunciation dictionaries when generating audio:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# First, create or get your dictionary ID
+dictionary_id = "your_dictionary_id"
+
+# Use it in text-to-speech
+audio = client.text_to_speech.convert(
+    text="The AI will process your API request.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",
+    pronunciation_dictionary_locators=[
+        {"pronunciation_dictionary_id": dictionary_id, "version_id": "latest"}
+    ]
+)
+
+with open("output.mp3", "wb") as f:
+    f.write(audio)
+```
+
+## Async Support
+
+All pronunciation dictionary operations support async:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+from elevenlabs.pronunciation_dictionaries import (
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias,
+)
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def create_and_list():
+    # Create dictionary
+    dictionary = await client.pronunciation_dictionaries.create_from_rules(
+        rules=[
+            BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias(
+                string_to_replace="Thailand",
+                case_sensitive=True,
+                word_boundaries=True,
+                alias="tie-land",
+            )
+        ],
+        name="My Dictionary",
+    )
+    
+    # List all dictionaries
+    response = await client.pronunciation_dictionaries.list()
+    
+    for dict_item in response.pronunciation_dictionaries:
+        print(f"Found: {dict_item.name}")
+
+asyncio.run(create_and_list())
+```
+
+## Workspace Access
+
+Control who can access your pronunciation dictionaries:
+
+```python
+from elevenlabs.pronunciation_dictionaries import (
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostWorkspaceAccess,
+)
+
+dictionary = client.pronunciation_dictionaries.create_from_rules(
+    rules=[...],
+    name="Shared Dictionary",
+    workspace_access="editor"  # Options: "admin", "editor", "viewer"
+)
+```
+
+<ParamField path="workspace_access" type="str">
+  Access level for workspace members:
+  - `"admin"` - Full control including deletion
+  - `"editor"` - Can modify and use the dictionary
+  - `"viewer"` - Can only view and use the dictionary
+  - Not provided - No workspace access (private)
+</ParamField>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use word boundaries for abbreviations" icon="border-all">
+    When creating rules for abbreviations like "API" or "AI", set `word_boundaries=True` to avoid replacing these letters within other words.
+
+    ```python
+    # Good - only replaces standalone "AI"
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias(
+        string_to_replace="AI",
+        alias="A I",
+        word_boundaries=True  # Won't replace AI in "CHAIR"
+    )
+    ```
+  </Accordion>
+
+  <Accordion title="Test pronunciations before production" icon="vial">
+    Always test your pronunciation rules with sample audio before deploying to production. Different voices may handle the same rules differently.
+  </Accordion>
+
+  <Accordion title="Version your dictionaries" icon="code-branch">
+    Dictionaries are versioned automatically when rules change. Keep track of version IDs if you need to reference specific rule sets.
+  </Accordion>
+
+  <Accordion title="Use descriptive names" icon="tag">
+    Give your dictionaries clear, descriptive names and descriptions to make them easy to identify and manage.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  For phoneme rules, use the IPA (International Phonetic Alphabet) for most languages. CMU is specifically designed for American English.
+</Tip>
+
+## Common Use Cases
+
+### Technical Documentation
+
+```python
+tech_rules = [
+    # Abbreviations
+    {"string_to_replace": "API", "alias": "A P I"},
+    {"string_to_replace": "SDK", "alias": "S D K"},
+    {"string_to_replace": "HTTP", "alias": "H T T P"},
+    
+    # Brand names
+    {"string_to_replace": "GitHub", "alias": "git hub"},
+    {"string_to_replace": "PostgreSQL", "alias": "post gres Q L"},
+]
+```
+
+### Medical Terminology
+
+```python
+medical_rules = [
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Phoneme(
+        string_to_replace="arrhythmia",
+        phoneme="əˈrɪðmiə",
+        alphabet="ipa"
+    ),
+]
+```
+
+### Multilingual Content
+
+```python
+multilingual_rules = [
+    # French names
+    {"string_to_replace": "Renault", "alias": "ruh-noh"},
+    # Japanese companies
+    {"string_to_replace": "Mitsubishi", "alias": "mit-soo-bee-shee"},
+]
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Async Client" icon="rotate" href="/guides/async-client">
+    Use pronunciation dictionaries with async operations
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Handle errors when working with dictionaries
+  </Card>
+</CardGroup>

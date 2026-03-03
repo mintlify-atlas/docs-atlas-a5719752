@@ -1,0 +1,434 @@
+---
+title: "Music Generation"
+description: "Generate custom music tracks from text prompts using AI"
+---
+
+## Overview
+
+The Music Generation API allows you to create original music tracks from text prompts. Generate instrumental or vocal music in various styles, lengths, and genres.
+
+## Basic Music Generation
+
+Generate music from a simple prompt:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio = client.music.compose(
+    prompt="Upbeat electronic dance music with heavy bass",
+    music_length_ms=30000  # 30 seconds
+)
+
+# Save the generated music
+with open("generated_music.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+## Detailed Response
+
+Get detailed metadata along with the audio:
+
+```python
+response = client.music.compose_detailed(
+    prompt="Relaxing piano melody with soft strings",
+    music_length_ms=60000,  # 60 seconds
+    output_format="mp3_44100_128"
+)
+
+print(f"Song ID: {response.song_id}")
+print(f"Filename: {response.filename}")
+print(f"Metadata: {response.json}")
+
+# Access composition plan
+if 'compositionPlan' in response.json:
+    plan = response.json['compositionPlan']
+    print(f"Composition plan: {plan}")
+
+# Access song metadata
+if 'songMetadata' in response.json:
+    metadata = response.json['songMetadata']
+    print(f"Title: {metadata.get('title')}")
+    print(f"Description: {metadata.get('description')}")
+    print(f"Genres: {metadata.get('genres')}")
+
+# Save the audio
+with open(response.filename, "wb") as f:
+    f.write(response.audio)
+```
+
+## Parameters
+
+<ParamField path="prompt" type="string">
+  Text description of the music to generate.
+</ParamField>
+
+<ParamField path="composition_plan" type="MusicPrompt">
+  Detailed composition plan instead of a text prompt.
+</ParamField>
+
+<ParamField path="music_length_ms" type="integer">
+  Length of the music in milliseconds.
+</ParamField>
+
+<ParamField path="model_id" type="string">
+  Model to use for generation. Default: `music_v1`.
+</ParamField>
+
+<ParamField path="output_format" type="string">
+  Output audio format (e.g., `mp3_44100_128`).
+</ParamField>
+
+<ParamField path="force_instrumental" type="boolean">
+  Force the generation to be instrumental only (no vocals).
+</ParamField>
+
+<ParamField path="store_for_inpainting" type="boolean">
+  Store the generation for future inpainting/editing.
+</ParamField>
+
+<ParamField path="with_timestamps" type="boolean">
+  Include timestamps in the response.
+</ParamField>
+
+<ParamField path="sign_with_c2pa" type="boolean">
+  Sign the audio with C2PA authentication.
+</ParamField>
+
+## Instrumental Music
+
+Generate instrumental-only music:
+
+```python
+audio = client.music.compose(
+    prompt="Epic orchestral soundtrack with dramatic strings and brass",
+    music_length_ms=45000,
+    force_instrumental=True
+)
+
+with open("instrumental.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+## Different Music Lengths
+
+Generate music of various durations:
+
+```python
+# Short jingle (10 seconds)
+short = client.music.compose(
+    prompt="Catchy commercial jingle",
+    music_length_ms=10000
+)
+
+# Medium track (60 seconds)
+medium = client.music.compose(
+    prompt="Smooth jazz with saxophone",
+    music_length_ms=60000
+)
+
+# Long track (2 minutes)
+long = client.music.compose(
+    prompt="Ambient meditation music",
+    music_length_ms=120000
+)
+```
+
+## With Composition Plan
+
+Use a structured composition plan for more control:
+
+```python
+from elevenlabs.types.music_prompt import MusicPrompt
+
+composition_plan = MusicPrompt(
+    structure=[
+        {
+            "section": "intro",
+            "duration_ms": 10000,
+            "description": "Soft piano intro"
+        },
+        {
+            "section": "verse",
+            "duration_ms": 20000,
+            "description": "Add drums and bass"
+        },
+        {
+            "section": "chorus",
+            "duration_ms": 15000,
+            "description": "Full instrumentation with energy"
+        },
+        {
+            "section": "outro",
+            "duration_ms": 10000,
+            "description": "Fade out with piano"
+        }
+    ]
+)
+
+response = client.music.compose_detailed(
+    composition_plan=composition_plan,
+    output_format="mp3_44100_128"
+)
+```
+
+## Store for Later Editing
+
+Generate and store music for future inpainting:
+
+```python
+response = client.music.compose_detailed(
+    prompt="Rock song with electric guitar",
+    music_length_ms=60000,
+    store_for_inpainting=True
+)
+
+print(f"Song ID for editing: {response.song_id}")
+
+# Save the audio
+with open("editable_song.mp3", "wb") as f:
+    f.write(response.audio)
+```
+
+## Different Genres and Styles
+
+```python
+# Electronic
+electronic = client.music.compose(
+    prompt="Deep house with progressive synths and steady beat",
+    music_length_ms=60000
+)
+
+# Classical
+classical = client.music.compose(
+    prompt="Baroque chamber music with harpsichord and strings",
+    music_length_ms=45000,
+    force_instrumental=True
+)
+
+# Rock
+rock = client.music.compose(
+    prompt="Heavy metal with distorted guitars and double bass drums",
+    music_length_ms=90000
+)
+
+# Jazz
+jazz = client.music.compose(
+    prompt="Smooth jazz with saxophone solo and walking bass",
+    music_length_ms=120000
+)
+
+# Ambient
+ambient = client.music.compose(
+    prompt="Ethereal ambient soundscape with pads and nature sounds",
+    music_length_ms=180000,
+    force_instrumental=True
+)
+```
+
+## Batch Generation
+
+Generate multiple tracks:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+prompts = [
+    "Upbeat pop song with catchy melody",
+    "Dark cinematic trailer music",
+    "Chill lofi hip hop beats",
+    "Energetic workout music",
+    "Peaceful meditation sounds"
+]
+
+for i, prompt in enumerate(prompts):
+    print(f"Generating track {i+1}/{len(prompts)}: {prompt}")
+    
+    audio = client.music.compose(
+        prompt=prompt,
+        music_length_ms=30000
+    )
+    
+    filename = f"track_{i+1}.mp3"
+    with open(filename, "wb") as f:
+        for chunk in audio:
+            f.write(chunk)
+    
+    print(f"Saved: {filename}")
+
+print("All tracks generated!")
+```
+
+## Async Generation
+
+Generate music asynchronously:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+async def generate_music():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    response = await client.music.compose_detailed(
+        prompt="Epic fantasy adventure music",
+        music_length_ms=60000,
+        force_instrumental=True
+    )
+    
+    print(f"Generated: {response.filename}")
+    
+    with open(response.filename, "wb") as f:
+        f.write(response.audio)
+    
+    return response.song_id
+
+song_id = asyncio.run(generate_music())
+print(f"Song ID: {song_id}")
+```
+
+## Parallel Generation
+
+Generate multiple tracks concurrently:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+async def generate_track(client, prompt, filename):
+    """Generate a single track"""
+    audio = await client.music.compose(
+        prompt=prompt,
+        music_length_ms=30000
+    )
+    
+    with open(filename, "wb") as f:
+        async for chunk in audio:
+            f.write(chunk)
+    
+    return filename
+
+async def generate_album():
+    """Generate multiple tracks in parallel"""
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    tracks = [
+        ("Energetic opening theme", "track1.mp3"),
+        ("Mysterious exploration music", "track2.mp3"),
+        ("Intense battle theme", "track3.mp3"),
+        ("Peaceful village music", "track4.mp3"),
+        ("Epic final boss theme", "track5.mp3"),
+    ]
+    
+    tasks = [
+        generate_track(client, prompt, filename)
+        for prompt, filename in tracks
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    return results
+
+results = asyncio.run(generate_album())
+print(f"Generated {len(results)} tracks: {results}")
+```
+
+## Output Formats
+
+Supported output formats:
+
+- `mp3_22050_32` - MP3 at 22.05kHz, 32kbps
+- `mp3_44100_32` - MP3 at 44.1kHz, 32kbps
+- `mp3_44100_64` - MP3 at 44.1kHz, 64kbps
+- `mp3_44100_96` - MP3 at 44.1kHz, 96kbps
+- `mp3_44100_128` - MP3 at 44.1kHz, 128kbps (recommended)
+- `mp3_44100_192` - MP3 at 44.1kHz, 192kbps
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Content Creation" icon="video">
+    Generate background music for videos
+  </Card>
+  <Card title="Game Development" icon="gamepad">
+    Create dynamic game soundtracks
+  </Card>
+  <Card title="Podcasts" icon="podcast">
+    Add intro/outro music to episodes
+  </Card>
+  <Card title="Marketing" icon="bullhorn">
+    Create custom audio for campaigns
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Tip>
+  - Be specific in your prompts (genre, mood, instruments)
+  - Use `force_instrumental=True` for background music
+  - Start with shorter lengths (30-60s) for testing
+  - Use `store_for_inpainting=True` if you might edit later
+  - Try different prompts to get varied results
+</Tip>
+
+<Info>
+  Music generation is non-deterministic. The same prompt may produce different results each time. For consistent results, save the song_id when using `store_for_inpainting`.
+</Info>
+
+## Prompt Tips
+
+Write effective music generation prompts:
+
+```python
+# Good prompts include:
+# 1. Genre/Style
+# 2. Instruments
+# 3. Mood/Energy
+# 4. Tempo
+
+good_prompts = [
+    "Upbeat indie rock with jangly guitars, driving drums, and optimistic mood",
+    "Slow ambient electronic with warm synth pads, subtle percussion, dreamy atmosphere",
+    "Fast-paced drum and bass with heavy sub-bass, breakbeats, energetic feel",
+    "Classical string quartet playing melancholic melody, slow tempo, emotional",
+    "Tropical house with steel drums, marimba, laid-back summer vibes, medium tempo"
+]
+
+for prompt in good_prompts:
+    audio = client.music.compose(
+        prompt=prompt,
+        music_length_ms=30000
+    )
+```
+
+## Error Handling
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    response = client.music.compose_detailed(
+        prompt="Epic orchestral music",
+        music_length_ms=60000
+    )
+    
+    with open("music.mp3", "wb") as f:
+        f.write(response.audio)
+    
+    print("Music generated successfully!")
+    
+except Exception as e:
+    print(f"Error generating music: {e}")
+```
+
+## Related Features
+
+- [Text to Speech](/core/text-to-speech) - Generate speech
+- [Sound Effects](/advanced/sound-effects) - Generate sound effects (if available)
+- [Audio Isolation](/advanced/audio-isolation) - Clean generated audio

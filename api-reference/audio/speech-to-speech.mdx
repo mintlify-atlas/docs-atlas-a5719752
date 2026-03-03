@@ -1,0 +1,203 @@
+---
+title: 'Speech to Speech'
+description: 'Transform audio from one voice to another while maintaining emotion, timing, and delivery'
+---
+
+## Overview
+
+The Speech to Speech API allows you to transform audio from one voice to another, maintaining full control over emotion, timing, and delivery. This is also known as voice conversion or voice changing.
+
+## Methods
+
+### convert()
+
+Transform audio from one voice to another with full control over emotion, timing, and delivery.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio_iterator = client.speech_to_speech.convert(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    audio=open("input_audio.mp3", "rb"),
+    model_id="eleven_multilingual_sts_v2",
+    output_format="mp3_44100_128"
+)
+
+# Save the audio
+with open("output.mp3", "wb") as f:
+    for chunk in audio_iterator:
+        f.write(chunk)
+```
+
+<ParamField path="voice_id" type="str" required>
+  ID of the voice to be used. Use the Get voices endpoint to list all available voices.
+</ParamField>
+
+<ParamField path="audio" type="core.File" required>
+  The audio file to convert. Can be a file path, file object, or bytes.
+</ParamField>
+
+<ParamField path="model_id" type="str">
+  Identifier of the model that will be used. The model needs to have support for speech to speech (can_do_voice_conversion property). Default models include:
+  - `eleven_multilingual_sts_v2` - Multilingual speech-to-speech model
+  - `eleven_english_sts_v2` - English speech-to-speech model
+</ParamField>
+
+<ParamField path="output_format" type="str">
+  Output format of the generated audio. Formatted as `codec_sample_rate_bitrate`. Examples:
+  - `mp3_44100_128` - MP3 at 44.1kHz, 128kbps
+  - `mp3_22050_32` - MP3 at 22.05kHz, 32kbps
+  - `pcm_16000` - PCM at 16kHz
+  - `ulaw_8000` - μ-law at 8kHz (commonly used for Twilio)
+  
+  Note: Higher quality formats may require subscription to Creator tier or above.
+</ParamField>
+
+<ParamField path="enable_logging" type="bool">
+  When set to `False`, zero retention mode will be used for the request. History features will be unavailable. Zero retention mode may only be used by enterprise customers.
+</ParamField>
+
+<ParamField path="optimize_streaming_latency" type="int">
+  Latency optimization level. Higher values reduce latency at some cost to quality:
+  - `0` - Default mode (no latency optimizations)
+  - `1` - Normal latency optimizations (~50% improvement)
+  - `2` - Strong latency optimizations (~75% improvement)
+  - `3` - Maximum latency optimizations
+  - `4` - Maximum latency optimizations with text normalizer disabled (best latency, may mispronounce numbers/dates)
+</ParamField>
+
+<ParamField path="voice_settings" type="str">
+  Voice settings as a JSON-encoded string. These override stored settings for the given voice and apply only to this request. Example:
+  ```json
+  {"stability": 0.5, "similarity_boost": 0.75}
+  ```
+</ParamField>
+
+<ParamField path="seed" type="int">
+  Random seed for deterministic generation. Must be an integer between 0 and 4294967295. Repeated requests with the same seed and parameters should return similar results, though determinism is not guaranteed.
+</ParamField>
+
+<ParamField path="remove_background_noise" type="bool">
+  If set, will remove background noise from your audio input using the audio isolation model. Only applies to Voice Changer.
+</ParamField>
+
+<ParamField path="file_format" type="str">
+  The format of input audio. Options:
+  - `pcm_s16le_16` - 16-bit PCM at 16kHz sample rate, mono, little-endian (lower latency)
+  - `other` - Any other encoded audio format (default)
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration including chunk_size and other customizations.
+</ParamField>
+
+<ResponseField name="return" type="Iterator[bytes]">
+  An iterator yielding audio data chunks. Iterate over this to get the complete audio file.
+</ResponseField>
+
+---
+
+### stream()
+
+Stream audio conversion from one voice to another in real-time.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio_stream = client.speech_to_speech.stream(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    audio=open("input_audio.mp3", "rb"),
+    model_id="eleven_multilingual_sts_v2",
+    output_format="mp3_44100_128"
+)
+
+# Process streaming audio
+for chunk in audio_stream:
+    # Play or process audio chunk
+    process_audio_chunk(chunk)
+```
+
+<ParamField path="voice_id" type="str" required>
+  ID of the voice to be used.
+</ParamField>
+
+<ParamField path="audio" type="core.File" required>
+  The audio file to convert.
+</ParamField>
+
+<ParamField path="model_id" type="str">
+  Identifier of the speech-to-speech model to use.
+</ParamField>
+
+<ParamField path="output_format" type="str">
+  Output format of the streamed audio. Same format options as `convert()`.
+</ParamField>
+
+<ParamField path="enable_logging" type="bool">
+  Enable or disable request logging.
+</ParamField>
+
+<ParamField path="optimize_streaming_latency" type="int">
+  Latency optimization level (0-4). Recommended for streaming use cases.
+</ParamField>
+
+<ParamField path="voice_settings" type="str">
+  JSON-encoded voice settings override.
+</ParamField>
+
+<ParamField path="seed" type="int">
+  Random seed for deterministic generation (0-4294967295).
+</ParamField>
+
+<ParamField path="remove_background_noise" type="bool">
+  Remove background noise from input audio.
+</ParamField>
+
+<ParamField path="file_format" type="str">
+  Format of input audio (`pcm_s16le_16` or `other`).
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="Iterator[bytes]">
+  An iterator yielding streaming audio data chunks.
+</ResponseField>
+
+---
+
+## Async Methods
+
+All methods have async equivalents accessible via `AsyncElevenLabs`:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def convert_audio():
+    audio_iterator = await client.speech_to_speech.convert(
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        audio=open("input_audio.mp3", "rb"),
+        model_id="eleven_multilingual_sts_v2"
+    )
+    
+    async for chunk in audio_iterator:
+        # Process audio chunk
+        pass
+
+asyncio.run(convert_audio())
+```
+
+## Use Cases
+
+- **Voice changing**: Transform your voice into a different voice while preserving emotion and timing
+- **Podcast editing**: Replace speaker voices while maintaining natural delivery
+- **Content localization**: Adapt voice characteristics for different audiences
+- **Audio restoration**: Improve audio quality while preserving the original timing and emotion

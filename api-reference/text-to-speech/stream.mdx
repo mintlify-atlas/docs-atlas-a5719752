@@ -1,0 +1,180 @@
+---
+title: "stream"
+description: "Convert text into speech and return audio as a streaming response"
+---
+
+## Method Signature
+
+```python
+client.text_to_speech.stream(
+    voice_id: str,
+    text: str,
+    enable_logging: Optional[bool] = None,
+    optimize_streaming_latency: Optional[int] = None,
+    output_format: Optional[str] = None,
+    model_id: Optional[str] = None,
+    language_code: Optional[str] = None,
+    voice_settings: Optional[VoiceSettings] = None,
+    pronunciation_dictionary_locators: Optional[List[PronunciationDictionaryVersionLocator]] = None,
+    seed: Optional[int] = None,
+    previous_text: Optional[str] = None,
+    next_text: Optional[str] = None,
+    previous_request_ids: Optional[List[str]] = None,
+    next_request_ids: Optional[List[str]] = None,
+    use_pvc_as_ivc: Optional[bool] = None,
+    apply_text_normalization: Optional[str] = None,
+    apply_language_text_normalization: Optional[bool] = None,
+    request_options: Optional[RequestOptions] = None,
+) -> Iterator[bytes]
+```
+
+## Parameters
+
+<ParamField path="voice_id" type="str" required>
+  ID of the voice to be used. Use the [Get voices](/docs/api-reference/voices/search) endpoint to list all available voices.
+</ParamField>
+
+<ParamField path="text" type="str" required>
+  The text that will get converted into speech.
+</ParamField>
+
+<ParamField path="enable_logging" type="bool" default="None">
+  When set to `false`, zero retention mode will be used for the request. This means history features are unavailable for this request, including request stitching. Zero retention mode may only be used by enterprise customers.
+</ParamField>
+
+<ParamField path="optimize_streaming_latency" type="int" default="None">
+  You can turn on latency optimizations at some cost of quality. The best possible final latency varies by model. Possible values:
+  - `0` - default mode (no latency optimizations)
+  - `1` - normal latency optimizations (about 50% of possible latency improvement of option 3)
+  - `2` - strong latency optimizations (about 75% of possible latency improvement of option 3)
+  - `3` - max latency optimizations
+  - `4` - max latency optimizations, but also with text normalizer turned off for even more latency savings (best latency, but can mispronounce numbers and dates)
+</ParamField>
+
+<ParamField path="output_format" type="str" default="None">
+  Output format of the generated audio. Formatted as `codec_sample_rate_bitrate`. For example, an mp3 with 22.05kHz sample rate at 32kbps is represented as `mp3_22050_32`. 
+  
+  **Note:** MP3 with 192kbps bitrate requires Creator tier or above. PCM with 44.1kHz sample rate requires Pro tier or above. The μ-law format (sometimes written mu-law, often approximated as u-law) is commonly used for Twilio audio inputs.
+</ParamField>
+
+<ParamField path="model_id" type="str" default="None">
+  Identifier of the model that will be used. You can query available models using `GET /v1/models`. The model needs to have support for text to speech, which you can check using the `can_do_text_to_speech` property.
+</ParamField>
+
+<ParamField path="language_code" type="str" default="None">
+  Language code (ISO 639-1) used to enforce a language for the model and text normalization. If the model does not support the provided language code, an error will be returned.
+</ParamField>
+
+<ParamField path="voice_settings" type="VoiceSettings" default="None">
+  Voice settings overriding stored settings for the given voice. They are applied only on the given request.
+</ParamField>
+
+<ParamField path="pronunciation_dictionary_locators" type="List[PronunciationDictionaryVersionLocator]" default="None">
+  A list of pronunciation dictionary locators (id, version_id) to be applied to the text. They will be applied in order. You may have up to 3 locators per request.
+</ParamField>
+
+<ParamField path="seed" type="int" default="None">
+  If specified, the system will make a best effort to sample deterministically, such that repeated requests with the same seed and parameters should return the same result. Determinism is not guaranteed. Must be an integer between 0 and 4294967295.
+</ParamField>
+
+<ParamField path="previous_text" type="str" default="None">
+  The text that came before the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation.
+</ParamField>
+
+<ParamField path="next_text" type="str" default="None">
+  The text that comes after the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation.
+</ParamField>
+
+<ParamField path="previous_request_ids" type="List[str]" default="None">
+  A list of request_id of the samples that were generated before this generation. Can be used to improve the speech's continuity when splitting up a large task into multiple requests. The results will be best when the same model is used across the generations. If both `previous_text` and `previous_request_ids` are sent, `previous_text` will be ignored. A maximum of 3 request_ids can be sent.
+</ParamField>
+
+<ParamField path="next_request_ids" type="List[str]" default="None">
+  A list of request_id of the samples that come after this generation. Especially useful for maintaining the speech's continuity when regenerating a sample that has had some audio quality issues. For example, if you have generated 3 speech clips and want to improve clip 2, passing the request id of clip 3 as a `next_request_id` (and that of clip 1 as a `previous_request_id`) will help maintain natural flow in the combined speech. The results will be best when the same model is used across the generations. If both `next_text` and `next_request_ids` are sent, `next_text` will be ignored. A maximum of 3 request_ids can be sent.
+</ParamField>
+
+<ParamField path="use_pvc_as_ivc" type="bool" default="None">
+  If `true`, the system won't use the PVC version of the voice for the generation but the IVC version. This is a temporary workaround for higher latency in PVC versions.
+</ParamField>
+
+<ParamField path="apply_text_normalization" type="str" default="None">
+  This parameter controls text normalization with three modes: `'auto'`, `'on'`, and `'off'`. When set to `'auto'`, the system will automatically decide whether to apply text normalization (e.g., spelling out numbers). With `'on'`, text normalization will always be applied, while with `'off'`, it will be skipped.
+</ParamField>
+
+<ParamField path="apply_language_text_normalization" type="bool" default="None">
+  This parameter controls language text normalization. This helps with proper pronunciation of text in some supported languages. 
+  
+  **WARNING:** This parameter can heavily increase the latency of the request. Currently only supported for Japanese.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions" default="None">
+  Request-specific configuration. You can pass in configuration such as `chunk_size` and more to customize the request and response.
+</ParamField>
+
+## Returns
+
+`Iterator[bytes]` - Streaming audio data as an iterator of byte chunks.
+
+## Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+
+audio_stream = client.text_to_speech.stream(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    output_format="mp3_44100_128",
+    text="The first move is what sets everything in motion.",
+    model_id="eleven_multilingual_v2",
+)
+
+# Stream the audio to a file
+with open("output.mp3", "wb") as f:
+    for chunk in audio_stream:
+        f.write(chunk)
+```
+
+## Real-time Playback Example
+
+```python
+from elevenlabs import ElevenLabs
+import pyaudio
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+
+# Set up audio playback
+p = pyaudio.PyAudio()
+stream = p.open(
+    format=pyaudio.paInt16,
+    channels=1,
+    rate=44100,
+    output=True
+)
+
+# Stream and play audio in real-time
+audio_stream = client.text_to_speech.stream(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    output_format="mp3_44100_128",
+    text="This audio will play in real-time as it streams.",
+    model_id="eleven_multilingual_v2",
+    optimize_streaming_latency=3,  # Max latency optimization
+)
+
+for chunk in audio_stream:
+    stream.write(chunk)
+
+stream.stop_stream()
+stream.close()
+p.terminate()
+```
+
+## Notes
+
+- The `stream()` method is ideal for real-time applications where you want to start playing audio before the entire generation is complete
+- Use the `optimize_streaming_latency` parameter to reduce latency at the cost of some quality
+- The method returns audio chunks as they become available, allowing for immediate playback

@@ -1,0 +1,246 @@
+---
+title: Text-to-Speech
+description: Convert text to lifelike speech using ElevenLabs TTS models
+---
+
+The ElevenLabs Python SDK provides powerful text-to-speech capabilities that convert written text into natural-sounding audio using advanced AI models.
+
+## Basic Usage
+
+Convert text to speech with the `convert()` method:
+
+```python
+from elevenlabs.client import ElevenLabs
+from elevenlabs.play import play
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+audio = client.text_to_speech.convert(
+    text="The first move is what sets everything in motion.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_v3",
+    output_format="mp3_44100_128"
+)
+
+play(audio)
+```
+
+## Output Formats
+
+The SDK supports various audio output formats formatted as `codec_sample_rate_bitrate`:
+
+<CodeGroup>
+
+```python MP3 Format
+audio = client.text_to_speech.convert(
+    text="High quality MP3 audio.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    output_format="mp3_44100_128"  # MP3, 44.1kHz, 128kbps
+)
+```
+
+```python PCM Format
+audio = client.text_to_speech.convert(
+    text="PCM format for high fidelity.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    output_format="pcm_44100"  # PCM, 44.1kHz (Pro tier+)
+)
+```
+
+```python μ-law Format
+audio = client.text_to_speech.convert(
+    text="Format for Twilio integration.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    output_format="ulaw_8000"  # μ-law, 8kHz
+)
+```
+
+</CodeGroup>
+
+<Note>
+- MP3 with 192kbps requires Creator tier or above
+- PCM and WAV with 44.1kHz require Pro tier or above
+- μ-law format is commonly used for Twilio audio inputs
+</Note>
+
+## Model Selection
+
+Choose from different models optimized for various use cases:
+
+```python
+# Eleven v3 - Dramatic delivery, 70+ languages
+audio = client.text_to_speech.convert(
+    text="Experience dramatic performances.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_v3"
+)
+
+# Eleven Multilingual v2 - Stability and accuracy
+audio = client.text_to_speech.convert(
+    text="Stability across 29 languages.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2"
+)
+
+# Eleven Flash v2.5 - Ultra-low latency
+audio = client.text_to_speech.convert(
+    text="Fast generation with low latency.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_flash_v2_5"
+)
+
+# Eleven Turbo v2.5 - Balanced speed and quality
+audio = client.text_to_speech.convert(
+    text="Great balance for developers.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_turbo_v2_5"
+)
+```
+
+## Voice Settings
+
+Customize voice characteristics with the `VoiceSettings` parameter:
+
+```python
+from elevenlabs.types import VoiceSettings
+
+audio = client.text_to_speech.convert(
+    text="Customized voice output.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_v3",
+    voice_settings=VoiceSettings(
+        stability=0.5,
+        similarity_boost=0.75
+    )
+)
+```
+
+## Advanced Options
+
+### Latency Optimization
+
+Optimize streaming latency at some cost of quality:
+
+```python
+audio = client.text_to_speech.convert(
+    text="Optimized for low latency.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    optimize_streaming_latency=3  # 0-4, where 4 is max optimization
+)
+```
+
+<ParamField path="optimize_streaming_latency" type="int">
+  - `0` - Default mode (no latency optimizations)
+  - `1` - Normal optimizations (~50% improvement)
+  - `2` - Strong optimizations (~75% improvement)
+  - `3` - Max latency optimizations
+  - `4` - Max with text normalizer off (best latency, may mispronounce numbers/dates)
+</ParamField>
+
+### Language Control
+
+Enforce a specific language using ISO 639-1 codes:
+
+```python
+audio = client.text_to_speech.convert(
+    text="Bonjour le monde",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",
+    language_code="fr"  # French
+)
+```
+
+### Deterministic Generation
+
+Use a seed for reproducible results:
+
+```python
+audio = client.text_to_speech.convert(
+    text="Same seed produces same audio.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    seed=12345  # Integer between 0 and 4294967295
+)
+```
+
+### Context for Continuity
+
+Improve speech continuity when generating multiple clips:
+
+```python
+# First generation
+audio1 = client.text_to_speech.convert(
+    text="This is the first sentence.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    next_text="This is the second sentence."
+)
+
+# Second generation with context
+audio2 = client.text_to_speech.convert(
+    text="This is the second sentence.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    previous_text="This is the first sentence."
+)
+```
+
+## Saving Audio Files
+
+Save generated audio to a file:
+
+```python
+from elevenlabs.play import save
+
+audio = client.text_to_speech.convert(
+    text="Save this audio to disk.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    output_format="mp3_44100_128"
+)
+
+save(audio, "output.mp3")
+```
+
+## Timestamps
+
+Get character-level timing information for audio-text synchronization:
+
+```python
+response = client.text_to_speech.convert_with_timestamps(
+    text="This is a test for the API of ElevenLabs.",
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    output_format="mp3_44100_128"
+)
+
+# Access audio data and alignment info
+audio_data = response.audio
+alignment = response.alignment
+```
+
+## Async Usage
+
+Use the async client for non-blocking operations:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+client = AsyncElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+async def generate_speech():
+    audio = await client.text_to_speech.convert(
+        text="Async text-to-speech generation.",
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        model_id="eleven_multilingual_v2"
+    )
+    # Process audio bytes
+    async for chunk in audio:
+        print(f"Received {len(chunk)} bytes")
+
+asyncio.run(generate_speech())
+```
+
+<Card title="Next Steps" icon="arrow-right" href="/streaming">
+  Learn how to stream audio in real-time for lower latency
+</Card>

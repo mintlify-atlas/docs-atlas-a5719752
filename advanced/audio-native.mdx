@@ -1,0 +1,348 @@
+---
+title: "Audio Native"
+description: "Create embeddable audio players for web content with automatic conversion"
+---
+
+## Overview
+
+Audio Native allows you to create embeddable audio players for your web content. Upload articles, blog posts, or other text content and get an embeddable HTML snippet with an audio player.
+
+## Create Audio Native Project
+
+Create a project with automatic audio conversion:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Upload an HTML or text file
+response = client.audio_native.create(
+    name="Blog Post Player",
+    file=open("article.html", "rb"),
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    auto_convert=True
+)
+
+print(f"Project ID: {response.project_id}")
+print(f"Embeddable HTML:\n{response.html_snippet}")
+```
+
+## Parameters
+
+<ParamField path="name" type="string" required>
+  Project name.
+</ParamField>
+
+<ParamField path="file" type="File">
+  The HTML or text file to convert to audio.
+</ParamField>
+
+<ParamField path="voice_id" type="string">
+  Voice ID to use for the content. If not provided, default voice from Player settings is used.
+</ParamField>
+
+<ParamField path="model_id" type="string">
+  TTS Model ID to use. If not provided, default model from Player settings is used.
+</ParamField>
+
+<ParamField path="auto_convert" type="boolean">
+  Whether to automatically convert the project to audio.
+</ParamField>
+
+<ParamField path="author" type="string">
+  Author name displayed in the player. If not provided, default author from Player settings is used.
+</ParamField>
+
+<ParamField path="title" type="string">
+  Title displayed in the player. If not provided, default title from Player settings is used.
+</ParamField>
+
+<ParamField path="image" type="string">
+  (Deprecated) Image URL used in the player.
+</ParamField>
+
+<ParamField path="text_color" type="string">
+  Text color used in the player (hex code).
+</ParamField>
+
+<ParamField path="background_color" type="string">
+  Background color used in the player (hex code).
+</ParamField>
+
+<ParamField path="small" type="boolean">
+  (Deprecated) Whether to use small player.
+</ParamField>
+
+<ParamField path="sessionization" type="integer">
+  (Deprecated) Minutes to persist the session across page reloads.
+</ParamField>
+
+<ParamField path="apply_text_normalization" type="string">
+  Text normalization mode: `auto`, `on`, `off`, or `apply_english`.
+</ParamField>
+
+<ParamField path="pronunciation_dictionary_locators" type="List[string]">
+  JSON-encoded pronunciation dictionary locators to apply.
+</ParamField>
+
+## Custom Player Styling
+
+Customize the player appearance:
+
+```python
+response = client.audio_native.create(
+    name="Styled Player",
+    file=open("article.html", "rb"),
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    title="My Article Title",
+    author="John Doe",
+    text_color="#FFFFFF",
+    background_color="#1A1A1A",
+    auto_convert=True
+)
+```
+
+## Update Project Content
+
+Update the content of an existing project:
+
+```python
+response = client.audio_native.update(
+    project_id="your-project-id",
+    file=open("updated_article.html", "rb"),
+    auto_convert=True,
+    auto_publish=True
+)
+
+print(f"Project updated: {response.success}")
+```
+
+## Update from URL
+
+Automatically extract and update content from a URL:
+
+```python
+response = client.audio_native.update_content_from_url(
+    url="https://elevenlabs.io/blog/the_first_ai_that_can_laugh/"
+)
+
+print(f"Content updated from URL: {response.success}")
+```
+
+## Get Project Settings
+
+Retrieve player settings for a project:
+
+```python
+settings = client.audio_native.get_settings(
+    project_id="21m00Tcm4TlvDq8ikWAM"
+)
+
+print(f"Voice ID: {settings.voice_id}")
+print(f"Model ID: {settings.model_id}")
+print(f"Title: {settings.title}")
+print(f"Author: {settings.author}")
+```
+
+## With Text Normalization
+
+Control how numbers and special characters are handled:
+
+```python
+response = client.audio_native.create(
+    name="Normalized Text",
+    file=open("technical_article.html", "rb"),
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    auto_convert=True,
+    apply_text_normalization="on"  # Always apply normalization
+)
+```
+
+Normalization modes:
+- `auto` - System automatically decides
+- `on` - Always apply normalization
+- `off` - Skip normalization
+- `apply_english` - Apply English normalization rules
+
+## With Pronunciation Dictionaries
+
+Use custom pronunciation dictionaries:
+
+```python
+import json
+
+# Define pronunciation dictionaries
+dict_locators = [
+    json.dumps({
+        "pronunciation_dictionary_id": "dict-id-1",
+        "version_id": "version-id-1"
+    }),
+    json.dumps({
+        "pronunciation_dictionary_id": "dict-id-2",
+        "version_id": "version-id-2"
+    })
+]
+
+response = client.audio_native.create(
+    name="Custom Pronunciations",
+    file=open("technical_terms.html", "rb"),
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    auto_convert=True,
+    pronunciation_dictionary_locators=dict_locators
+)
+```
+
+## Complete Workflow
+
+Full example from creation to embedding:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Step 1: Create the project
+print("Creating Audio Native project...")
+response = client.audio_native.create(
+    name="My Blog Post",
+    file=open("blog_post.html", "rb"),
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",
+    title="10 Tips for Better Writing",
+    author="Jane Smith",
+    text_color="#2C3E50",
+    background_color="#ECF0F1",
+    auto_convert=True,
+    apply_text_normalization="auto"
+)
+
+project_id = response.project_id
+html_snippet = response.html_snippet
+
+print(f"Project created: {project_id}")
+
+# Step 2: Save the HTML snippet to use in your webpage
+with open("embed_snippet.html", "w") as f:
+    f.write(html_snippet)
+
+print("Embeddable snippet saved to embed_snippet.html")
+
+# Step 3: Later, update the content
+print("\nUpdating content...")
+update_response = client.audio_native.update(
+    project_id=project_id,
+    file=open("blog_post_v2.html", "rb"),
+    auto_convert=True,
+    auto_publish=True
+)
+
+print("Content updated and published!")
+
+# Step 4: Check settings
+settings = client.audio_native.get_settings(project_id)
+print(f"\nProject settings:")
+print(f"  Voice: {settings.voice_id}")
+print(f"  Model: {settings.model_id}")
+print(f"  Title: {settings.title}")
+```
+
+## Async Support
+
+All operations support async:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+async def create_audio_native():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    response = await client.audio_native.create(
+        name="Async Project",
+        file=open("article.html", "rb"),
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        auto_convert=True
+    )
+    
+    return response.project_id
+
+project_id = asyncio.run(create_audio_native())
+print(f"Project ID: {project_id}")
+```
+
+## Embedding the Player
+
+Use the returned HTML snippet in your webpage:
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Article</title>
+</head>
+<body>
+    <h1>My Article Title</h1>
+    
+    <!-- Embed the Audio Native player -->
+    <div id="elevenlabs-audio-native"></div>
+    <script src="https://elevenlabs.io/player/audioNativeHelper.js"></script>
+    <script>
+        // The snippet from response.html_snippet
+    </script>
+    
+    <article>
+        <p>Your article content here...</p>
+    </article>
+</body>
+</html>
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Blog Posts" icon="blog">
+    Add audio versions to blog articles
+  </Card>
+  <Card title="News Articles" icon="newspaper">
+    Make news content accessible as audio
+  </Card>
+  <Card title="Documentation" icon="book">
+    Provide audio versions of docs
+  </Card>
+  <Card title="E-Learning" icon="graduation-cap">
+    Convert learning materials to audio
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Tip>
+  - Use descriptive project names for easy management
+  - Set appropriate title and author for better UX
+  - Enable auto_convert for immediate audio generation
+  - Use auto_publish when updating to deploy changes immediately
+  - Choose colors that match your brand
+</Tip>
+
+<Info>
+  The Audio Native player provides a seamless reading experience where users can listen to your content while browsing. It automatically syncs highlighting with the audio playback.
+</Info>
+
+## Content Requirements
+
+Supported file formats:
+- HTML files
+- Plain text files
+- Markdown (as text)
+
+The content should:
+- Be well-structured with proper headings
+- Contain primarily text content
+- Be in a supported language
+
+## Related Features
+
+- [Text to Speech](/core/text-to-speech) - Direct TTS conversion
+- [Voice Cloning](/advanced/voice-cloning) - Create custom voices for players
+- [Projects](/core/projects) - Manage audio projects

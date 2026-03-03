@@ -1,0 +1,211 @@
+---
+title: 'Speech to Text'
+description: 'Transcribe audio and video files with advanced features like diarization, entity detection, and multi-channel support'
+---
+
+## Overview
+
+The Speech to Text API (also known as Scribe) transcribes audio and video files with advanced features including speaker diarization, entity detection, multi-channel support, and webhook integration.
+
+## Methods
+
+### convert()
+
+Transcribe an audio or video file with full control over transcription parameters.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.speech_to_text.convert(
+    file=open("audio.mp3", "rb"),
+    model_id="scribe_v1",
+    language_code="en",
+    diarize=True,
+    tag_audio_events=True
+)
+
+print(response.transcript)
+print(f"Detected {len(response.speakers)} speakers")
+```
+
+<ParamField path="model_id" type="str" required>
+  The ID of the model to use for transcription. Available models:
+  - `scribe_v1` - General purpose transcription model
+  - `scribe_v2` - Latest transcription model with improved accuracy
+</ParamField>
+
+<ParamField path="file" type="core.File">
+  The audio or video file to transcribe. Supports common formats including MP3, WAV, MP4, and more. Either `file` or `cloud_storage_url` must be provided.
+</ParamField>
+
+<ParamField path="cloud_storage_url" type="str">
+  The HTTPS URL of the file to transcribe. The file must be accessible via HTTPS and less than 2GB. Supports URLs from cloud storage providers (AWS S3, Google Cloud Storage, Cloudflare R2, etc.), CDNs, or any HTTPS source. URLs can include authentication tokens in query parameters.
+</ParamField>
+
+<ParamField path="enable_logging" type="bool">
+  When set to `False`, zero retention mode will be used. Log and transcript storage features will be unavailable. Zero retention mode may only be used by enterprise customers.
+</ParamField>
+
+<ParamField path="language_code" type="str">
+  An ISO-639-1 or ISO-639-3 language code (e.g., "en", "es", "fr", "de"). Can improve transcription performance if known beforehand. If not provided, the language is automatically detected.
+</ParamField>
+
+<ParamField path="tag_audio_events" type="bool">
+  Whether to tag audio events like `(laughter)`, `(footsteps)`, `(applause)`, etc. in the transcription.
+</ParamField>
+
+<ParamField path="num_speakers" type="int">
+  The maximum number of speakers talking in the file. Helps with speaker prediction. Maximum of 32 speakers. If not provided, defaults to the maximum the model supports.
+</ParamField>
+
+<ParamField path="timestamps_granularity" type="str">
+  The granularity of timestamps in the transcription:
+  - `word` - Provides word-level timestamps
+  - `character` - Provides character-level timestamps per word
+</ParamField>
+
+<ParamField path="diarize" type="bool">
+  Whether to annotate which speaker is talking at each point in the file. Enables speaker identification with labels like "Speaker 1", "Speaker 2", etc.
+</ParamField>
+
+<ParamField path="diarization_threshold" type="float">
+  Diarization threshold for speaker detection. Higher values mean fewer predicted speakers (less chance of splitting one speaker into two, but higher chance of merging two speakers into one). Lower values mean more predicted speakers. Can only be set when `diarize=True` and `num_speakers=None`. Default is model-specific (usually 0.22).
+</ParamField>
+
+<ParamField path="additional_formats" type="List[str]">
+  Additional formats to export the transcript to. Options include:
+  - `srt` - SubRip subtitle format
+  - `vtt` - WebVTT subtitle format
+  - `txt` - Plain text
+  - `json` - Detailed JSON format
+</ParamField>
+
+<ParamField path="file_format" type="str">
+  The format of input audio:
+  - `pcm_s16le_16` - 16-bit PCM at 16kHz, mono, little-endian (lower latency)
+  - `other` - Any other encoded format (default)
+</ParamField>
+
+<ParamField path="webhook" type="bool">
+  Whether to send the transcription result to configured webhooks. If set to `True`, the request returns early without the transcription, which is delivered later via webhook.
+</ParamField>
+
+<ParamField path="webhook_id" type="str">
+  Optional specific webhook ID to send results to. Only valid when `webhook=True`. If not provided, results are sent to all configured speech-to-text webhooks.
+</ParamField>
+
+<ParamField path="webhook_metadata" type="dict">
+  Optional metadata to include in webhook responses. Should be a JSON-serializable object with maximum depth of 2 levels and maximum size of 16KB. Useful for tracking internal IDs, job references, or contextual information.
+</ParamField>
+
+<ParamField path="temperature" type="float">
+  Controls randomness of transcription output. Accepts values between 0.0 and 2.0. Higher values produce more diverse, less deterministic results. Default is model-specific (usually 0).
+</ParamField>
+
+<ParamField path="seed" type="int">
+  Random seed for deterministic transcription. Must be an integer between 0 and 2147483647. Repeated requests with the same seed and parameters should return similar results, though determinism is not guaranteed.
+</ParamField>
+
+<ParamField path="use_multi_channel" type="bool">
+  Whether the audio file contains multiple channels where each channel has a single speaker. When enabled, each channel is transcribed independently and results are combined. Each word includes a `channel_index` field. Maximum of 5 channels supported.
+</ParamField>
+
+<ParamField path="entity_detection" type="str | List[str]">
+  Detect entities in the transcript. Options:
+  - `all` - Detect all entities
+  - Single entity type or category string
+  - List of entity types/categories
+  
+  Categories include: `pii`, `phi`, `pci`, `other`, `offensive_language`
+  
+  Detected entities are returned in the `entities` field with text, type, and character positions. Usage incurs additional costs.
+</ParamField>
+
+<ParamField path="keyterms" type="List[str]">
+  A list of keyterms to bias the transcription towards. Keyterms are words or phrases you want the model to recognize more accurately. 
+  
+  Constraints:
+  - Maximum 100 keyterms
+  - Each keyterm must be less than 50 characters
+  - Each keyterm can contain at most 5 words (after normalization)
+  
+  Example: `["ElevenLabs", "API key", "neural network"]`
+  
+  Usage incurs additional costs.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="SpeechToTextConvertResponse">
+  The transcription result containing:
+  - `transcript` (str) - The full transcript text
+  - `speakers` (List) - List of detected speakers (if diarize=True)
+  - `words` (List) - Word-level details with timestamps
+  - `entities` (List) - Detected entities (if entity_detection enabled)
+  - `language` (str) - Detected language code
+  - Additional format exports if requested
+</ResponseField>
+
+---
+
+## Realtime Transcription
+
+Access realtime speech-to-text via WebSocket connection:
+
+```python
+from elevenlabs import ElevenLabs, RealtimeEvents, AudioFormat
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# URL-based streaming
+connection = await client.speech_to_text.realtime.connect({
+    "url": "https://stream.example.com/audio.mp3"
+})
+
+connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, lambda data: print(data))
+connection.on(RealtimeEvents.FINAL_TRANSCRIPT, lambda data: print(data))
+
+# Manual audio chunks
+connection = await client.speech_to_text.realtime.connect({
+    "audio_format": AudioFormat.PCM_16000,
+    "sample_rate": 16000
+})
+
+# Send audio chunks
+await connection.send_audio(audio_chunk)
+```
+
+---
+
+## Async Methods
+
+All methods have async equivalents:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def transcribe():
+    response = await client.speech_to_text.convert(
+        file=open("audio.mp3", "rb"),
+        model_id="scribe_v1",
+        diarize=True
+    )
+    print(response.transcript)
+
+asyncio.run(transcribe())
+```
+
+## Use Cases
+
+- **Meeting transcription**: Transcribe meetings with speaker identification
+- **Content accessibility**: Generate subtitles and captions for videos
+- **Content analysis**: Extract entities and keywords from audio content
+- **Multi-language support**: Transcribe content in multiple languages
+- **Compliance**: Detect and redact PII, PHI, or PCI information

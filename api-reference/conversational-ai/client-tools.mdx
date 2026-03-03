@@ -1,0 +1,301 @@
+---
+title: "ClientTools"
+description: "Reference for registering and managing client-side tools"
+---
+
+## Overview
+
+The `ClientTools` class handles registration and execution of client-side tools that can be called by the conversational AI agent. It supports both synchronous and asynchronous tools and runs them in a dedicated event loop to ensure non-blocking operation.
+
+## Constructor
+
+```python
+ClientTools(loop: Optional[asyncio.AbstractEventLoop] = None)
+```
+
+<ParamField path="loop" type="asyncio.AbstractEventLoop">
+  Optional custom asyncio event loop to use for tool execution. If not provided, a new event loop will be created and run in a separate thread. Using a custom loop prevents "different event loop" runtime errors and allows for better context propagation and resource management.
+</ParamField>
+
+## Methods
+
+### start
+
+```python
+client_tools.start()
+```
+
+Start the event loop in a separate thread for handling async operations. This is called automatically when creating a Conversation, but can be called manually if needed.
+
+---
+
+### stop
+
+```python
+client_tools.stop()
+```
+
+Gracefully stop the event loop and clean up resources. This is called automatically when ending a Conversation.
+
+---
+
+### register
+
+```python
+client_tools.register(
+    tool_name: str,
+    handler: Union[Callable[[dict], Any], Callable[[dict], Awaitable[Any]]],
+    is_async: bool = False,
+) -> None
+```
+
+Register a new tool that can be called by the AI agent.
+
+<ParamField path="tool_name" type="str" required>
+  Unique identifier for the tool. This name will be used by the agent to call the tool.
+</ParamField>
+
+<ParamField path="handler" type="Union[Callable[[dict], Any], Callable[[dict], Awaitable[Any]]]" required>
+  Function that implements the tool's logic. Receives a dictionary of parameters and returns the tool result.
+</ParamField>
+
+<ParamField path="is_async" type="bool">
+  Whether the handler is an async function. Defaults to False.
+</ParamField>
+
+**Raises:**
+- `ValueError` if the handler is not callable
+- `ValueError` if a tool with the same name is already registered
+
+---
+
+### handle
+
+```python
+await client_tools.handle(
+    tool_name: str,
+    parameters: dict
+) -> Any
+```
+
+Execute a registered tool with the given parameters. This is an internal method typically called by the conversation handler.
+
+<ParamField path="tool_name" type="str" required>
+  The name of the tool to execute.
+</ParamField>
+
+<ParamField path="parameters" type="dict" required>
+  Parameters to pass to the tool handler.
+</ParamField>
+
+**Returns:** The result of the tool execution.
+
+**Raises:** `ValueError` if the tool is not registered.
+
+---
+
+### execute_tool
+
+```python
+client_tools.execute_tool(
+    tool_name: str,
+    parameters: dict,
+    callback: Callable[[dict], None]
+) -> None
+```
+
+Execute a tool and send its result via the provided callback. This method is non-blocking and handles both sync and async tools. This is an internal method used by the conversation handler.
+
+<ParamField path="tool_name" type="str" required>
+  The name of the tool to execute.
+</ParamField>
+
+<ParamField path="parameters" type="dict" required>
+  Parameters to pass to the tool handler.
+</ParamField>
+
+<ParamField path="callback" type="Callable[[dict], None]" required>
+  Callback function to send the result to.
+</ParamField>
+
+**Raises:** `RuntimeError` if the ClientTools event loop is not running.
+
+---
+
+## Examples
+
+### Synchronous Tool
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.conversational_ai import Conversation, DefaultAudioInterface, ClientTools
+
+# Create client tools
+client_tools = ClientTools()
+
+# Register a synchronous tool
+def get_weather(params: dict) -> str:
+    location = params.get("location", "unknown")
+    # Simulate weather lookup
+    return f"The weather in {location} is sunny and 72°F"
+
+client_tools.register(
+    tool_name="get_weather",
+    handler=get_weather,
+    is_async=False
+)
+
+# Use with conversation
+client = ElevenLabs(api_key="your-api-key")
+conversation = Conversation(
+    client=client,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=DefaultAudioInterface(),
+    client_tools=client_tools,
+)
+
+conversation.start_session()
+# Agent can now call the get_weather tool
+```
+
+### Asynchronous Tool
+
+```python
+import asyncio
+from elevenlabs import ElevenLabs
+from elevenlabs.conversational_ai import Conversation, DefaultAudioInterface, ClientTools
+
+# Create client tools
+client_tools = ClientTools()
+
+# Register an asynchronous tool
+async def search_database(params: dict) -> dict:
+    query = params.get("query", "")
+    # Simulate async database search
+    await asyncio.sleep(1)
+    return {
+        "results": ["result1", "result2"],
+        "count": 2
+    }
+
+client_tools.register(
+    tool_name="search_database",
+    handler=search_database,
+    is_async=True
+)
+
+# Use with conversation
+client = ElevenLabs(api_key="your-api-key")
+conversation = Conversation(
+    client=client,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=DefaultAudioInterface(),
+    client_tools=client_tools,
+)
+
+conversation.start_session()
+```
+
+### Multiple Tools
+
+```python
+from elevenlabs.conversational_ai import ClientTools
+import json
+
+client_tools = ClientTools()
+
+# Register multiple tools
+def calculator(params: dict) -> float:
+    operation = params.get("operation")
+    a = params.get("a", 0)
+    b = params.get("b", 0)
+    
+    if operation == "add":
+        return a + b
+    elif operation == "subtract":
+        return a - b
+    elif operation == "multiply":
+        return a * b
+    elif operation == "divide":
+        return a / b if b != 0 else "Error: Division by zero"
+    return "Unknown operation"
+
+def get_user_info(params: dict) -> dict:
+    user_id = params.get("user_id")
+    # Simulate user lookup
+    return {
+        "id": user_id,
+        "name": "John Doe",
+        "email": "john@example.com"
+    }
+
+client_tools.register("calculator", calculator, is_async=False)
+client_tools.register("get_user_info", get_user_info, is_async=False)
+
+# Now both tools are available to the agent
+```
+
+### Using Custom Event Loop
+
+```python
+import asyncio
+from elevenlabs.conversational_ai import ClientTools
+
+# Create a custom event loop
+loop = asyncio.new_event_loop()
+
+# Use it with ClientTools
+client_tools = ClientTools(loop=loop)
+
+# Register tools as usual
+async def my_tool(params: dict) -> str:
+    return "Result"
+
+client_tools.register("my_tool", my_tool, is_async=True)
+```
+
+---
+
+## Tool Handler Requirements
+
+### Parameter Format
+
+Tool handlers receive parameters as a dictionary. The agent will call your tool with parameters based on the tool definition configured in your agent settings.
+
+```python
+def my_tool(params: dict) -> Any:
+    # Access parameters from the dict
+    param1 = params.get("param1")
+    param2 = params.get("param2", "default_value")
+    
+    # Process and return result
+    return {"result": "success"}
+```
+
+### Return Values
+
+Tools can return any JSON-serializable value:
+- Strings
+- Numbers
+- Dictionaries
+- Lists
+- Booleans
+- None
+
+The return value will be sent back to the agent for processing.
+
+### Error Handling
+
+If a tool raises an exception, it will be caught and the error message will be sent back to the agent:
+
+```python
+def risky_tool(params: dict) -> str:
+    value = params.get("value")
+    if not value:
+        raise ValueError("Value parameter is required")
+    return f"Processed: {value}"
+```
+
+The agent will receive an error response with the exception message.

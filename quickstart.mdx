@@ -1,80 +1,289 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Generate your first text-to-speech audio with the ElevenLabs Python SDK in minutes
 ---
 
-## Get started in three steps
+## Prerequisites
 
-Get your documentation site running locally and make your first customization.
+Before you begin, make sure you have:
 
-### Step 1: Set up your local environment
+- Installed the ElevenLabs Python SDK ([Installation Guide](/installation))
+- An ElevenLabs API key ([Get one here](https://elevenlabs.io))
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Your First Text-to-Speech
 
-### Step 2: Deploy your changes
+Let's generate high-quality speech audio from text in just a few lines of code.
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+<Steps>
+  <Step title="Set Up Your Environment">
+    Create a new Python file and set up your environment variables:
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    ```python
+    from dotenv import load_dotenv
+    from elevenlabs.client import ElevenLabs
+    from elevenlabs.play import play
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    # Load your API key from .env file
+    load_dotenv()
+    ```
 
-### Step 3: Go live
+    <Note>
+      Make sure you have a `.env` file with your API key: `ELEVENLABS_API_KEY=your_api_key_here`
+    </Note>
+  </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+  <Step title="Initialize the Client">
+    Create an ElevenLabs client instance:
 
-## Next steps
+    ```python
+    elevenlabs = ElevenLabs()
+    ```
 
-Now that you have your docs running, explore these key features:
+    The client will automatically use the `ELEVENLABS_API_KEY` from your environment variables.
+  </Step>
+
+  <Step title="Generate Audio">
+    Convert text to speech using the `text_to_speech.convert()` method:
+
+    ```python
+    audio = elevenlabs.text_to_speech.convert(
+        text="The first move is what sets everything in motion.",
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        model_id="eleven_v3",
+        output_format="mp3_44100_128",
+    )
+    ```
+
+    This generates audio using the Eleven v3 model with a pre-configured voice.
+  </Step>
+
+  <Step title="Play the Audio">
+    Play the generated audio directly:
+
+    ```python
+    play(audio)
+    ```
+
+    <Note>
+      The `play()` function requires the PyAudio package. Install it with: `pip install elevenlabs[pyaudio]`
+    </Note>
+  </Step>
+</Steps>
+
+## Complete Example
+
+Here's the complete working example:
+
+```python
+from dotenv import load_dotenv
+from elevenlabs.client import ElevenLabs
+from elevenlabs.play import play
+
+load_dotenv()
+
+elevenlabs = ElevenLabs()
+
+audio = elevenlabs.text_to_speech.convert(
+    text="The first move is what sets everything in motion.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_v3",
+    output_format="mp3_44100_128",
+)
+
+play(audio)
+```
+
+## Understanding the Code
+
+### Model Selection
+
+The SDK supports multiple AI models optimized for different use cases:
+
+<CodeGroup>
+
+```python Eleven v3 (Dramatic)
+audio = elevenlabs.text_to_speech.convert(
+    text="Your text here",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_v3",  # Dramatic delivery, 70+ languages
+    output_format="mp3_44100_128",
+)
+```
+
+```python Eleven Multilingual v2 (Stable)
+audio = elevenlabs.text_to_speech.convert(
+    text="Your text here",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",  # Best stability
+    output_format="mp3_44100_128",
+)
+```
+
+```python Eleven Flash v2.5 (Fast)
+audio = elevenlabs.text_to_speech.convert(
+    text="Your text here",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_flash_v2_5",  # Ultra-low latency
+    output_format="mp3_44100_128",
+)
+```
+
+```python Eleven Turbo v2.5 (Balanced)
+audio = elevenlabs.text_to_speech.convert(
+    text="Your text here",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_turbo_v2_5",  # Speed + quality balance
+    output_format="mp3_44100_128",
+)
+```
+
+</CodeGroup>
+
+### Voice IDs
+
+The `voice_id` parameter specifies which voice to use. In the example, we use `"JBFqnCBsd6RMkjVDRZzb"` which is a pre-made voice. You can:
+
+- Browse available voices in the [Voice Lab](https://elevenlabs.io/voice-lab)
+- List all your voices programmatically (see below)
+- Create custom voice clones
+
+### Output Formats
+
+Supported output formats include:
+- `mp3_44100_128` - MP3 at 44.1kHz, 128kbps
+- `mp3_44100_192` - MP3 at 44.1kHz, 192kbps
+- `pcm_16000` - Raw PCM at 16kHz
+- `pcm_22050` - Raw PCM at 22.05kHz
+- `pcm_24000` - Raw PCM at 24kHz
+- `pcm_44100` - Raw PCM at 44.1kHz
+
+## Exploring Available Voices
+
+List all available voices in your account:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+elevenlabs = ElevenLabs()
+
+response = elevenlabs.voices.search()
+for voice in response.voices:
+    print(f"Voice: {voice.name}, ID: {voice.voice_id}")
+```
+
+## Saving Audio to a File
+
+Instead of playing audio, save it to a file:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+elevenlabs = ElevenLabs()
+
+audio = elevenlabs.text_to_speech.convert(
+    text="The first move is what sets everything in motion.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_v3",
+    output_format="mp3_44100_128",
+)
+
+# Save to file
+with open("output.mp3", "wb") as f:
+    for chunk in audio:
+        if isinstance(chunk, bytes):
+            f.write(chunk)
+```
+
+## Streaming Audio
+
+For real-time applications, stream audio as it's being generated:
+
+```python
+from elevenlabs import stream
+from elevenlabs.client import ElevenLabs
+
+elevenlabs = ElevenLabs()
+
+audio_stream = elevenlabs.text_to_speech.stream(
+    text="This is a streaming test.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2"
+)
+
+# Option 1: Play the stream
+stream(audio_stream)
+
+# Option 2: Process chunks manually
+for chunk in audio_stream:
+    if isinstance(chunk, bytes):
+        # Process audio chunk
+        print(f"Received {len(chunk)} bytes")
+```
+
+<Warning>
+  Streaming requires a stable internet connection. Consider implementing retry logic for production applications.
+</Warning>
+
+## Using Async Client
+
+For async/await support, use `AsyncElevenLabs`:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+elevenlabs = AsyncElevenLabs()
+
+async def generate_speech():
+    audio = await elevenlabs.text_to_speech.convert(
+        text="Async text-to-speech example.",
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        model_id="eleven_v3",
+        output_format="mp3_44100_128",
+    )
+    return audio
+
+asyncio.run(generate_speech())
+```
+
+## Next Steps
+
+Now that you've generated your first audio, explore more features:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Voice Cloning" icon="microphone" href="https://elevenlabs.io/docs/api-reference">
+    Clone voices from audio samples
+  </Card>
+  <Card title="Conversational AI" icon="comments" href="https://elevenlabs.io/docs/api-reference">
+    Build interactive AI agents
+  </Card>
+  <Card title="Speech-to-Text" icon="waveform" href="https://elevenlabs.io/docs/api-reference">
+    Transcribe audio with high accuracy
+  </Card>
+  <Card title="API Reference" icon="book" href="https://elevenlabs.io/docs/api-reference">
+    Explore the complete API documentation
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Troubleshooting
+
+### Audio Not Playing
+
+If the `play()` function doesn't work:
+1. Ensure PyAudio is installed: `pip install elevenlabs[pyaudio]`
+2. Check your system audio settings
+3. Try saving to a file first to verify the audio was generated
+
+### Authentication Errors
+
+If you see authentication errors:
+1. Verify your API key is correct
+2. Check that the `.env` file is in the correct directory
+3. Ensure `python-dotenv` is installed: `pip install python-dotenv`
+
+### Model Not Available
+
+If a model isn't available:
+1. Check your subscription plan
+2. Verify the model ID is correct
+3. See [available models](https://elevenlabs.io/docs/models) for your plan

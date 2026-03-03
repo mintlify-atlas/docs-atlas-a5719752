@@ -1,0 +1,296 @@
+---
+title: Streaming
+description: Real-time audio streaming for low-latency text-to-speech
+---
+
+Streaming allows you to receive and play audio as it's being generated, reducing perceived latency and enabling real-time applications.
+
+## Basic Streaming
+
+Use the `stream()` method to get an iterator of audio chunks:
+
+```python
+from elevenlabs import stream
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+audio_stream = client.text_to_speech.stream(
+    text="This is a test of real-time streaming.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2"
+)
+
+# Play the stream directly
+stream(audio_stream)
+```
+
+## Stream Processing Options
+
+You have two main ways to handle streamed audio:
+
+<CodeGroup>
+
+```python Play Directly
+from elevenlabs import stream
+
+# Option 1: Use the stream() helper to play audio as it arrives
+audio_stream = client.text_to_speech.stream(
+    text="Play audio in real-time.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb"
+)
+
+stream(audio_stream)
+```
+
+```python Manual Processing
+# Option 2: Process audio chunks manually
+audio_stream = client.text_to_speech.stream(
+    text="Process each chunk individually.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb"
+)
+
+for chunk in audio_stream:
+    if isinstance(chunk, bytes):
+        # Process audio chunk (save, analyze, transmit, etc.)
+        print(f"Received {len(chunk)} bytes")
+        # Your custom processing here
+```
+
+</CodeGroup>
+
+## Optimizing Streaming Latency
+
+The `optimize_streaming_latency` parameter trades some quality for lower latency:
+
+```python
+audio_stream = client.text_to_speech.stream(
+    text="Ultra-low latency streaming.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_turbo_v2_5",
+    optimize_streaming_latency=4  # Maximum optimization
+)
+
+stream(audio_stream)
+```
+
+<ParamField path="optimize_streaming_latency" type="int">
+  - `0` - Default (no optimizations)
+  - `1` - Normal (~50% latency reduction)
+  - `2` - Strong (~75% latency reduction)
+  - `3` - Maximum latency optimization
+  - `4` - Maximum + text normalizer off (lowest latency, may affect pronunciation)
+</ParamField>
+
+<Tip>
+Combine `eleven_turbo_v2_5` or `eleven_flash_v2_5` models with high optimization levels for the best streaming performance.
+</Tip>
+
+## Streaming with Output Formats
+
+Specify the audio format for your stream:
+
+```python
+audio_stream = client.text_to_speech.stream(
+    text="Streaming in different formats.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    output_format="mp3_22050_32"  # Lower quality for faster streaming
+)
+
+stream(audio_stream)
+```
+
+<Note>
+Lower sample rates and bitrates reduce bandwidth and improve streaming speed but decrease audio quality.
+</Note>
+
+## Collecting Streamed Audio
+
+Save the entire audio while streaming:
+
+```python
+from elevenlabs.play import save
+
+audio_stream = client.text_to_speech.stream(
+    text="Stream and save simultaneously.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb"
+)
+
+# The stream() function returns the complete audio
+complete_audio = stream(audio_stream)
+
+# Save the complete audio
+save(complete_audio, "streamed_output.mp3")
+```
+
+## Custom Stream Handling
+
+Implement custom logic for each audio chunk:
+
+```python
+import io
+
+audio_stream = client.text_to_speech.stream(
+    text="Custom stream processing example.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_flash_v2_5"
+)
+
+audio_buffer = io.BytesIO()
+
+for chunk in audio_stream:
+    if isinstance(chunk, bytes):
+        # Write to buffer
+        audio_buffer.write(chunk)
+        
+        # Custom processing: send to websocket, analyze, etc.
+        # websocket.send(chunk)
+        
+        # Monitor progress
+        print(f"Buffer size: {audio_buffer.tell()} bytes")
+
+# Get complete audio from buffer
+audio_buffer.seek(0)
+complete_audio = audio_buffer.read()
+```
+
+## Streaming with Timestamps
+
+Get timing information while streaming:
+
+```python
+audio_stream = client.text_to_speech.stream_with_timestamps(
+    text="The first move is what sets everything in motion.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    model_id="eleven_multilingual_v2",
+    output_format="mp3_44100_128"
+)
+
+for chunk in audio_stream:
+    # Each chunk contains audio and character alignment data
+    if hasattr(chunk, 'audio'):
+        audio_bytes = chunk.audio
+        alignment = chunk.alignment
+        print(f"Audio chunk with {len(alignment)} alignment points")
+```
+
+## Async Streaming
+
+Stream audio asynchronously for better concurrency:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+client = AsyncElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+async def stream_audio():
+    audio_stream = await client.text_to_speech.stream(
+        text="Async streaming for concurrent operations.",
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        model_id="eleven_turbo_v2_5"
+    )
+    
+    async for chunk in audio_stream:
+        if isinstance(chunk, bytes):
+            # Process chunk asynchronously
+            await process_audio_chunk(chunk)
+
+async def process_audio_chunk(chunk: bytes):
+    # Your async processing logic
+    print(f"Processing {len(chunk)} bytes")
+
+asyncio.run(stream_audio())
+```
+
+## Playing Streamed Audio
+
+The SDK provides multiple ways to play streamed audio:
+
+<CodeGroup>
+
+```python Using MPV (Default)
+from elevenlabs import stream
+
+# Requires mpv installed (brew install mpv)
+audio_stream = client.text_to_speech.stream(
+    text="Playing with mpv.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb"
+)
+
+stream(audio_stream)
+```
+
+```python Using FFplay
+from elevenlabs.play import play
+
+# Collect stream and play with ffplay
+audio_stream = client.text_to_speech.stream(
+    text="Playing with ffplay.",
+    voice_id="JBFqnCBsd6RMkjVDRZzb"
+)
+
+# Convert iterator to bytes
+audio = b"".join(audio_stream)
+play(audio, use_ffmpeg=True)
+```
+
+</CodeGroup>
+
+<Warning>
+The `stream()` function requires `mpv` to be installed. Install it with:
+- macOS: `brew install mpv`
+- Linux/Windows: Download from [mpv.io](https://mpv.io/)
+</Warning>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Choose the Right Model">
+    - Use `eleven_flash_v2_5` for the fastest streaming
+    - Use `eleven_turbo_v2_5` for balanced quality and speed
+    - Avoid `eleven_v3` for streaming if latency is critical
+  </Accordion>
+
+  <Accordion title="Optimize Format">
+    - Lower sample rates (22050Hz) reduce latency
+    - Lower bitrates (32kbps) improve streaming speed
+    - Balance quality needs with performance requirements
+  </Accordion>
+
+  <Accordion title="Handle Errors Gracefully">
+    ```python
+    try:
+        audio_stream = client.text_to_speech.stream(
+            text="Handle streaming errors.",
+            voice_id="JBFqnCBsd6RMkjVDRZzb"
+        )
+        stream(audio_stream)
+    except Exception as e:
+        print(f"Streaming error: {e}")
+    ```
+  </Accordion>
+
+  <Accordion title="Buffer Management">
+    For long streams, consider buffering to prevent memory issues:
+    ```python
+    chunks_buffer = []
+    max_buffer_size = 100
+    
+    for chunk in audio_stream:
+        chunks_buffer.append(chunk)
+        if len(chunks_buffer) >= max_buffer_size:
+            # Process or save buffered chunks
+            process_chunks(chunks_buffer)
+            chunks_buffer = []
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Card title="Next Steps" icon="arrow-right" href="/voices">
+  Learn how to manage and customize voices
+</Card>

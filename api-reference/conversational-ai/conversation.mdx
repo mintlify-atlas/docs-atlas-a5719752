@@ -1,0 +1,454 @@
+---
+title: "Conversation"
+description: "Reference for the Conversation and AsyncConversation classes"
+---
+
+## Conversation
+
+Synchronous conversational AI session for real-time voice conversations with an agent.
+
+<Warning>
+BETA: This API is subject to change without regard to backwards compatibility.
+</Warning>
+
+### Constructor
+
+```python
+Conversation(
+    client: BaseElevenLabs,
+    agent_id: str,
+    user_id: Optional[str] = None,
+    *,
+    requires_auth: bool,
+    audio_interface: AudioInterface,
+    config: Optional[ConversationInitiationData] = None,
+    client_tools: Optional[ClientTools] = None,
+    callback_agent_response: Optional[Callable[[str], None]] = None,
+    callback_agent_response_correction: Optional[Callable[[str, str], None]] = None,
+    callback_agent_chat_response_part: Optional[Callable[[str, AgentChatResponsePartType], None]] = None,
+    callback_user_transcript: Optional[Callable[[str], None]] = None,
+    callback_latency_measurement: Optional[Callable[[int], None]] = None,
+    callback_audio_alignment: Optional[Callable[[AudioEventAlignment], None]] = None,
+    callback_end_session: Optional[Callable] = None,
+    on_prem_config: Optional[OnPremInitiationData] = None,
+)
+```
+
+<ParamField path="client" type="BaseElevenLabs" required>
+  The ElevenLabs client to use for the conversation.
+</ParamField>
+
+<ParamField path="agent_id" type="str" required>
+  The ID of the agent to converse with.
+</ParamField>
+
+<ParamField path="user_id" type="str">
+  The ID of the user conversing with the agent.
+</ParamField>
+
+<ParamField path="requires_auth" type="bool" required>
+  Whether the agent requires authentication.
+</ParamField>
+
+<ParamField path="audio_interface" type="AudioInterface" required>
+  The audio interface to use for input and output.
+</ParamField>
+
+<ParamField path="config" type="ConversationInitiationData">
+  Configuration options for the conversation including extra_body, conversation_config_override, dynamic_variables, and user_id.
+</ParamField>
+
+<ParamField path="client_tools" type="ClientTools">
+  Client-side tools that can be called by the agent during the conversation.
+</ParamField>
+
+<ParamField path="callback_agent_response" type="Callable[[str], None]">
+  Callback function invoked when the agent provides a response.
+</ParamField>
+
+<ParamField path="callback_agent_response_correction" type="Callable[[str, str], None]">
+  Callback for agent response corrections. First argument is the original response (previously given to callback_agent_response), second argument is the corrected response.
+</ParamField>
+
+<ParamField path="callback_agent_chat_response_part" type="Callable[[str, AgentChatResponsePartType], None]">
+  Callback for streaming text response chunks. First argument is the text chunk, second argument is the type (START, DELTA, or STOP).
+</ParamField>
+
+<ParamField path="callback_user_transcript" type="Callable[[str], None]">
+  Callback function invoked when user speech is transcribed.
+</ParamField>
+
+<ParamField path="callback_latency_measurement" type="Callable[[int], None]">
+  Callback for latency measurements in milliseconds.
+</ParamField>
+
+<ParamField path="callback_audio_alignment" type="Callable[[AudioEventAlignment], None]">
+  Callback for audio alignment data with character-level timing information.
+</ParamField>
+
+<ParamField path="callback_end_session" type="Callable">
+  Callback function invoked when the session ends.
+</ParamField>
+
+<ParamField path="on_prem_config" type="OnPremInitiationData">
+  Configuration options for on-premises deployment.
+</ParamField>
+
+### Methods
+
+#### start_session
+
+```python
+conversation.start_session()
+```
+
+Starts the conversation session. Will run in background thread until `end_session` is called.
+
+#### end_session
+
+```python
+conversation.end_session()
+```
+
+Ends the conversation session and cleans up resources.
+
+#### wait_for_session_end
+
+```python
+conversation_id = conversation.wait_for_session_end()
+```
+
+Waits for the conversation session to end. You must call `end_session` before calling this method, otherwise it will block.
+
+**Returns:** The conversation ID, if available.
+
+#### send_user_message
+
+```python
+conversation.send_user_message(text: str)
+```
+
+Send a text message from the user to the agent.
+
+<ParamField path="text" type="str" required>
+  The text message to send to the agent.
+</ParamField>
+
+**Raises:** `RuntimeError` if the session is not active or websocket is not connected.
+
+#### register_user_activity
+
+```python
+conversation.register_user_activity()
+```
+
+Register user activity to prevent session timeout. This sends a ping to the orchestrator to reset the timeout timer.
+
+**Raises:** `RuntimeError` if the session is not active or websocket is not connected.
+
+#### send_contextual_update
+
+```python
+conversation.send_contextual_update(text: str)
+```
+
+Send a contextual update to the conversation. Contextual updates are non-interrupting content that is sent to the server to update the conversation state without directly prompting the agent.
+
+<ParamField path="text" type="str" required>
+  The contextual information to send to the conversation.
+</ParamField>
+
+**Raises:** `RuntimeError` if the session is not active or websocket is not connected.
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.conversational_ai import Conversation, DefaultAudioInterface
+
+client = ElevenLabs(api_key="your-api-key")
+
+conversation = Conversation(
+    client=client,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=DefaultAudioInterface(),
+    callback_agent_response=lambda text: print(f"Agent: {text}"),
+    callback_user_transcript=lambda text: print(f"User: {text}"),
+)
+
+conversation.start_session()
+
+# Send a text message during the conversation
+conversation.send_user_message("Hello, how are you?")
+
+# Wait for user to end the conversation
+input("Press Enter to end conversation...")
+
+conversation.end_session()
+conversation_id = conversation.wait_for_session_end()
+print(f"Conversation ID: {conversation_id}")
+```
+
+---
+
+## AsyncConversation
+
+Asynchronous conversational AI session for real-time voice conversations with an agent.
+
+<Warning>
+BETA: This API is subject to change without regard to backwards compatibility.
+</Warning>
+
+### Constructor
+
+```python
+AsyncConversation(
+    client: BaseElevenLabs,
+    agent_id: str,
+    user_id: Optional[str] = None,
+    *,
+    requires_auth: bool,
+    audio_interface: AsyncAudioInterface,
+    config: Optional[ConversationInitiationData] = None,
+    client_tools: Optional[ClientTools] = None,
+    callback_agent_response: Optional[Callable[[str], Awaitable[None]]] = None,
+    callback_agent_response_correction: Optional[Callable[[str, str], Awaitable[None]]] = None,
+    callback_agent_chat_response_part: Optional[Callable[[str, AgentChatResponsePartType], Awaitable[None]]] = None,
+    callback_user_transcript: Optional[Callable[[str], Awaitable[None]]] = None,
+    callback_latency_measurement: Optional[Callable[[int], Awaitable[None]]] = None,
+    callback_audio_alignment: Optional[Callable[[AudioEventAlignment], Awaitable[None]]] = None,
+    callback_end_session: Optional[Callable[[], Awaitable[None]]] = None,
+    on_prem_config: Optional[OnPremInitiationData] = None,
+)
+```
+
+<ParamField path="client" type="BaseElevenLabs" required>
+  The ElevenLabs client to use for the conversation.
+</ParamField>
+
+<ParamField path="agent_id" type="str" required>
+  The ID of the agent to converse with.
+</ParamField>
+
+<ParamField path="user_id" type="str">
+  The ID of the user conversing with the agent.
+</ParamField>
+
+<ParamField path="requires_auth" type="bool" required>
+  Whether the agent requires authentication.
+</ParamField>
+
+<ParamField path="audio_interface" type="AsyncAudioInterface" required>
+  The async audio interface to use for input and output.
+</ParamField>
+
+<ParamField path="config" type="ConversationInitiationData">
+  Configuration options for the conversation.
+</ParamField>
+
+<ParamField path="client_tools" type="ClientTools">
+  Client-side tools that can be called by the agent during the conversation.
+</ParamField>
+
+<ParamField path="callback_agent_response" type="Callable[[str], Awaitable[None]]">
+  Async callback function invoked when the agent provides a response.
+</ParamField>
+
+<ParamField path="callback_agent_response_correction" type="Callable[[str, str], Awaitable[None]]">
+  Async callback for agent response corrections.
+</ParamField>
+
+<ParamField path="callback_agent_chat_response_part" type="Callable[[str, AgentChatResponsePartType], Awaitable[None]]">
+  Async callback for streaming text response chunks.
+</ParamField>
+
+<ParamField path="callback_user_transcript" type="Callable[[str], Awaitable[None]]">
+  Async callback function invoked when user speech is transcribed.
+</ParamField>
+
+<ParamField path="callback_latency_measurement" type="Callable[[int], Awaitable[None]]">
+  Async callback for latency measurements in milliseconds.
+</ParamField>
+
+<ParamField path="callback_audio_alignment" type="Callable[[AudioEventAlignment], Awaitable[None]]">
+  Async callback for audio alignment data with character-level timing.
+</ParamField>
+
+<ParamField path="callback_end_session" type="Callable[[], Awaitable[None]]">
+  Async callback function invoked when the session ends.
+</ParamField>
+
+<ParamField path="on_prem_config" type="OnPremInitiationData">
+  Configuration options for on-premises deployment.
+</ParamField>
+
+### Methods
+
+All methods are async and should be awaited.
+
+#### start_session
+
+```python
+await conversation.start_session()
+```
+
+Starts the conversation session. Will run in background task until `end_session` is called.
+
+#### end_session
+
+```python
+await conversation.end_session()
+```
+
+Ends the conversation session and cleans up resources.
+
+#### wait_for_session_end
+
+```python
+conversation_id = await conversation.wait_for_session_end()
+```
+
+Waits for the conversation session to end. You must call `end_session` before calling this method, otherwise it will block.
+
+**Returns:** The conversation ID, if available.
+
+#### send_user_message
+
+```python
+await conversation.send_user_message(text: str)
+```
+
+Send a text message from the user to the agent.
+
+<ParamField path="text" type="str" required>
+  The text message to send to the agent.
+</ParamField>
+
+**Raises:** `RuntimeError` if the session is not active or websocket is not connected.
+
+#### register_user_activity
+
+```python
+await conversation.register_user_activity()
+```
+
+Register user activity to prevent session timeout.
+
+**Raises:** `RuntimeError` if the session is not active or websocket is not connected.
+
+#### send_contextual_update
+
+```python
+await conversation.send_contextual_update(text: str)
+```
+
+Send a contextual update to the conversation.
+
+<ParamField path="text" type="str" required>
+  The contextual information to send to the conversation.
+</ParamField>
+
+**Raises:** `RuntimeError` if the session is not active or websocket is not connected.
+
+### Example
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+from elevenlabs.conversational_ai import AsyncConversation, AsyncDefaultAudioInterface
+
+async def main():
+    client = AsyncElevenLabs(api_key="your-api-key")
+    
+    conversation = AsyncConversation(
+        client=client,
+        agent_id="your-agent-id",
+        requires_auth=True,
+        audio_interface=AsyncDefaultAudioInterface(),
+        callback_agent_response=lambda text: print(f"Agent: {text}"),
+        callback_user_transcript=lambda text: print(f"User: {text}"),
+    )
+    
+    await conversation.start_session()
+    
+    # Send a text message during the conversation
+    await conversation.send_user_message("Hello, how are you?")
+    
+    # Simulate conversation time
+    await asyncio.sleep(30)
+    
+    await conversation.end_session()
+    conversation_id = await conversation.wait_for_session_end()
+    print(f"Conversation ID: {conversation_id}")
+
+asyncio.run(main())
+```
+
+---
+
+## Supporting Classes
+
+### ConversationInitiationData
+
+Configuration options for the Conversation.
+
+```python
+ConversationInitiationData(
+    extra_body: Optional[dict] = None,
+    conversation_config_override: Optional[dict] = None,
+    dynamic_variables: Optional[dict] = None,
+    user_id: Optional[str] = None,
+)
+```
+
+<ParamField path="extra_body" type="dict">
+  Additional custom data to include in the conversation initiation.
+</ParamField>
+
+<ParamField path="conversation_config_override" type="dict">
+  Configuration overrides for the conversation.
+</ParamField>
+
+<ParamField path="dynamic_variables" type="dict">
+  Dynamic variables to use during the conversation.
+</ParamField>
+
+<ParamField path="user_id" type="str">
+  The ID of the user conversing with the agent.
+</ParamField>
+
+### AudioEventAlignment
+
+Audio alignment data containing character-level timing information.
+
+```python
+@dataclass
+class AudioEventAlignment:
+    chars: List[str]
+    char_start_times_ms: List[int]
+    char_durations_ms: List[int]
+```
+
+<ParamField path="chars" type="List[str]">
+  List of characters in the audio.
+</ParamField>
+
+<ParamField path="char_start_times_ms" type="List[int]">
+  Start times for each character in milliseconds.
+</ParamField>
+
+<ParamField path="char_durations_ms" type="List[int]">
+  Duration of each character in milliseconds.
+</ParamField>
+
+### AgentChatResponsePartType
+
+Enum for streaming text response types.
+
+```python
+class AgentChatResponsePartType(str, Enum):
+    START = "start"  # Beginning of a response
+    DELTA = "delta"  # Text chunk in the middle of a response
+    STOP = "stop"    # End of a response
+```

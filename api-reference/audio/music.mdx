@@ -1,0 +1,411 @@
+---
+title: 'Music Generation'
+description: 'Generate original music from text prompts or detailed composition plans'
+---
+
+## Overview
+
+The Music Generation API allows you to create original music from simple text prompts or detailed composition plans. Generate songs with vocals or instrumental tracks, control structure and style, and separate audio into stems.
+
+## Methods
+
+### compose()
+
+Generate a song from a text prompt or composition plan.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Generate from a simple prompt
+audio_iterator = client.music.compose(
+    prompt="upbeat electronic dance music with energetic synths",
+    music_length_ms=30000,  # 30 seconds
+    output_format="mp3_44100_128"
+)
+
+# Save the generated music
+with open("generated_music.mp3", "wb") as f:
+    for chunk in audio_iterator:
+        f.write(chunk)
+```
+
+<ParamField path="prompt" type="str">
+  A simple text prompt to generate a song from. Describes the desired style, mood, instruments, and characteristics. Cannot be used together with `composition_plan`.
+  
+  Example prompts:
+  - "upbeat pop song with guitar and drums"
+  - "relaxing ambient piano music"
+  - "energetic rock with electric guitar solo"
+</ParamField>
+
+<ParamField path="composition_plan" type="MusicPrompt">
+  A detailed composition plan to guide music generation. Provides precise control over song structure, sections, instruments, and timing. Cannot be used together with `prompt`.
+  
+  Use the composition plan API to create and refine plans before generation.
+</ParamField>
+
+<ParamField path="music_length_ms" type="int">
+  The length of the song to generate in milliseconds. Used only with `prompt`. Must be between 3000ms (3 seconds) and 600000ms (10 minutes). If not provided, the model chooses a length based on the prompt.
+</ParamField>
+
+<ParamField path="output_format" type="str">
+  Output format of the generated audio. Formatted as `codec_sample_rate_bitrate`:
+  - `mp3_44100_128` - MP3 at 44.1kHz, 128kbps (recommended)
+  - `mp3_22050_32` - MP3 at 22.05kHz, 32kbps
+  - `pcm_16000` - PCM at 16kHz
+  - `pcm_22050` - PCM at 22.05kHz
+  - `pcm_44100` - PCM at 44.1kHz (requires Pro tier or above)
+  - `ulaw_8000` - μ-law at 8kHz
+  
+  Note: Higher quality formats may require subscription to Creator tier or above.
+</ParamField>
+
+<ParamField path="model_id" type="str">
+  The model to use for generation. Currently only `music_v1` is available.
+</ParamField>
+
+<ParamField path="seed" type="int">
+  Random seed to initialize the music generation process. Providing the same seed with the same parameters can help achieve more consistent results, though exact reproducibility is not guaranteed and outputs may change across system updates. Cannot be used with `prompt`.
+</ParamField>
+
+<ParamField path="force_instrumental" type="bool">
+  If `True`, guarantees the generated song will be instrumental (no vocals). If `False`, the song may or may not have vocals depending on the prompt. Can only be used with `prompt`.
+</ParamField>
+
+<ParamField path="respect_sections_durations" type="bool">
+  Controls how strictly section durations in the `composition_plan` are enforced. Only used with `composition_plan`.
+  
+  - `True` - Model precisely respects each section's `duration_ms` from the plan
+  - `False` - Model may adjust individual section durations for better quality and latency, while preserving total song duration
+</ParamField>
+
+<ParamField path="store_for_inpainting" type="bool">
+  Whether to store the generated song for inpainting. Only available to enterprise clients with access to the inpainting API.
+</ParamField>
+
+<ParamField path="sign_with_c_2_pa" type="bool">
+  Whether to sign the generated song with C2PA content credentials. Applicable only for MP3 files. Adds cryptographic proof of AI generation.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration including chunk_size and other customizations.
+</ParamField>
+
+<ResponseField name="return" type="Iterator[bytes]">
+  An iterator yielding audio data chunks in the specified output format.
+</ResponseField>
+
+---
+
+### compose_detailed()
+
+Generate a song with detailed metadata about the composition.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.music.compose_detailed(
+    prompt="jazz piano with soft drums",
+    music_length_ms=60000,
+    output_format="mp3_44100_128",
+    with_timestamps=True,
+    store_for_inpainting=True
+)
+
+# Access metadata
+print(f"Song ID: {response.song_id}")
+print(f"Title: {response.json['songMetadata']['title']}")
+print(f"Genres: {response.json['songMetadata']['genres']}")
+
+# Save audio
+with open("music.mp3", "wb") as f:
+    f.write(response.audio)
+```
+
+<ParamField path="prompt" type="str">
+  Text prompt describing the desired music.
+</ParamField>
+
+<ParamField path="composition_plan" type="MusicPrompt">
+  Detailed composition plan for structured generation.
+</ParamField>
+
+<ParamField path="music_length_ms" type="int">
+  Song length in milliseconds (3000-600000).
+</ParamField>
+
+<ParamField path="output_format" type="str">
+  Audio output format.
+</ParamField>
+
+<ParamField path="model_id" type="str">
+  Model to use (`music_v1`).
+</ParamField>
+
+<ParamField path="seed" type="int">
+  Random seed for generation.
+</ParamField>
+
+<ParamField path="force_instrumental" type="bool">
+  Force instrumental output (no vocals).
+</ParamField>
+
+<ParamField path="store_for_inpainting" type="bool">
+  Store for future inpainting operations.
+</ParamField>
+
+<ParamField path="with_timestamps" type="bool">
+  Whether to return word-level timestamps for vocal tracks.
+</ParamField>
+
+<ParamField path="sign_with_c2pa" type="bool">
+  Sign with C2PA content credentials.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="MultipartResponse">
+  A response object containing:
+  - `json` (dict) - Metadata including composition plan and song metadata:
+    - `compositionPlan` - Detailed composition structure
+    - `songMetadata` - Title, description, genres, languages, explicit flag
+  - `audio` (bytes) - The generated audio file
+  - `filename` (str) - Suggested filename for the audio
+  - `song_id` (str) - Unique identifier (if `store_for_inpainting=True`)
+</ResponseField>
+
+---
+
+### stream()
+
+Stream music generation from a prompt or composition plan.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio_stream = client.music.stream(
+    prompt="ambient electronic soundscape",
+    output_format="mp3_44100_128"
+)
+
+# Process streaming audio
+for chunk in audio_stream:
+    # Play or process audio chunk as it's generated
+    process_audio_chunk(chunk)
+```
+
+<ParamField path="prompt" type="str">
+  Text prompt for music generation.
+</ParamField>
+
+<ParamField path="composition_plan" type="MusicPrompt">
+  Detailed composition plan.
+</ParamField>
+
+<ParamField path="music_length_ms" type="int">
+  Song length in milliseconds.
+</ParamField>
+
+<ParamField path="output_format" type="str">
+  Audio output format.
+</ParamField>
+
+<ParamField path="model_id" type="str">
+  Model to use.
+</ParamField>
+
+<ParamField path="seed" type="int">
+  Random seed.
+</ParamField>
+
+<ParamField path="force_instrumental" type="bool">
+  Force instrumental output.
+</ParamField>
+
+<ParamField path="store_for_inpainting" type="bool">
+  Store for inpainting.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="Iterator[bytes]">
+  An iterator yielding streaming audio data chunks as they're generated.
+</ResponseField>
+
+---
+
+### separate_stems()
+
+Separate an audio file into individual instrument stems.
+
+```python
+from elevenlabs import ElevenLabs
+import zipfile
+import io
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+zip_iterator = client.music.separate_stems(
+    file=open("song.mp3", "rb"),
+    output_format="mp3_44100_128"
+)
+
+# Collect the ZIP file
+zip_data = b''.join(zip_iterator)
+
+# Extract stems
+with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
+    z.extractall("stems/")
+    print(f"Extracted stems: {z.namelist()}")
+```
+
+<ParamField path="file" type="core.File" required>
+  The audio file to separate into stems. Supports common formats like MP3, WAV, M4A, etc.
+</ParamField>
+
+<ParamField path="output_format" type="str">
+  Output format for the separated stems. Each stem will be saved in this format.
+</ParamField>
+
+<ParamField path="stem_variation_id" type="str">
+  The ID of the stem variation to use. Different variations provide different stem separations (e.g., vocals, drums, bass, other).
+</ParamField>
+
+<ParamField path="sign_with_c_2_pa" type="bool">
+  Whether to sign the separated stems with C2PA. Applicable only for MP3 files.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="Iterator[bytes]">
+  An iterator yielding a ZIP archive containing separated audio stems. Each stem is provided as a separate audio file in the requested output format.
+</ResponseField>
+
+---
+
+## Async Methods
+
+All methods have async equivalents:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def generate_music():
+    audio_iterator = await client.music.compose(
+        prompt="energetic rock music",
+        music_length_ms=45000
+    )
+    
+    with open("rock_song.mp3", "wb") as f:
+        async for chunk in audio_iterator:
+            f.write(chunk)
+
+asyncio.run(generate_music())
+```
+
+---
+
+## Advanced Usage
+
+### Using Composition Plans
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.types import MusicPrompt
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Create a detailed composition plan
+plan = client.music.composition_plan.create(
+    prompt="upbeat pop song with verse and chorus"
+)
+
+# Generate music from the plan
+audio = client.music.compose(
+    composition_plan=plan,
+    output_format="mp3_44100_128"
+)
+
+with open("song.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+### Processing Stems
+
+```python
+import zipfile
+import io
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Separate a song into stems
+zip_data = b''.join(client.music.separate_stems(
+    file=open("full_mix.mp3", "rb")
+))
+
+# Extract and process each stem
+with zipfile.ZipFile(io.BytesIO(zip_data)) as z:
+    for filename in z.namelist():
+        if "vocals" in filename.lower():
+            # Process vocal stem
+            vocal_data = z.read(filename)
+            with open("vocals.mp3", "wb") as f:
+                f.write(vocal_data)
+        elif "drums" in filename.lower():
+            # Process drum stem
+            drum_data = z.read(filename)
+            with open("drums.mp3", "wb") as f:
+                f.write(drum_data)
+```
+
+---
+
+## Use Cases
+
+- **Content creation**: Generate background music for videos and podcasts
+- **Game development**: Create dynamic game soundtracks
+- **Marketing**: Produce custom music for advertisements
+- **Music production**: Generate ideas and backing tracks
+- **Audio post-production**: Separate and remix existing tracks
+- **Personalization**: Create custom music based on user preferences
+
+---
+
+## Best Practices
+
+### Prompt Engineering
+
+- Be specific about style, instruments, and mood
+- Mention tempo (e.g., "fast", "slow", "moderate")
+- Specify instrumentation (e.g., "piano and strings")
+- Include mood descriptors (e.g., "energetic", "calm", "dramatic")
+
+### Quality Optimization
+
+- Use higher bitrate formats (128kbps or higher) for final output
+- Use `compose_detailed()` to get metadata and composition information
+- Set `respect_sections_durations=False` for better quality with composition plans
+- Use C2PA signing for content authentication
+
+### Performance
+
+- Use `stream()` for real-time applications
+- Cache generated songs with `song_id` for future reference
+- Use appropriate `music_length_ms` to balance quality and generation time

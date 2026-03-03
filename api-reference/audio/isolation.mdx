@@ -1,0 +1,248 @@
+---
+title: 'Audio Isolation'
+description: 'Remove background noise from audio files to isolate speech and improve audio quality'
+---
+
+## Overview
+
+The Audio Isolation API removes background noise from audio files, isolating the speech or primary audio signal. This is useful for cleaning up recordings, improving audio quality, and preparing audio for further processing.
+
+## Methods
+
+### convert()
+
+Remove background noise from an audio file.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio_iterator = client.audio_isolation.convert(
+    audio=open("noisy_audio.mp3", "rb")
+)
+
+# Save the cleaned audio
+with open("clean_audio.mp3", "wb") as f:
+    for chunk in audio_iterator:
+        f.write(chunk)
+```
+
+<ParamField path="audio" type="core.File" required>
+  The audio file to process. Can be a file path, file object, or bytes. Supports common audio formats including MP3, WAV, M4A, FLAC, and more.
+</ParamField>
+
+<ParamField path="file_format" type="str">
+  The format of input audio. Options:
+  - `pcm_s16le_16` - 16-bit PCM at 16kHz sample rate, single channel (mono), little-endian byte order. Provides lower latency compared to encoded formats.
+  - `other` - Any other encoded audio format (default)
+  
+  When using `pcm_s16le_16`, the input audio must match the exact specifications: 16-bit PCM, 16kHz sample rate, mono, little-endian.
+</ParamField>
+
+<ParamField path="preview_b_64" type="str">
+  Optional preview image as base64-encoded string. Used for tracking this generation in analytics and history.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration. You can pass in configuration such as `chunk_size` to customize the request and response behavior.
+</ParamField>
+
+<ResponseField name="return" type="Iterator[bytes]">
+  An iterator yielding audio data chunks. Iterate over this to get the complete isolated audio file.
+</ResponseField>
+
+---
+
+### stream()
+
+Stream background noise removal from an audio file.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio_stream = client.audio_isolation.stream(
+    audio=open("noisy_audio.mp3", "rb")
+)
+
+# Process streaming audio
+for chunk in audio_stream:
+    # Play or process the cleaned audio chunk
+    process_audio_chunk(chunk)
+```
+
+<ParamField path="audio" type="core.File" required>
+  The audio file to process.
+</ParamField>
+
+<ParamField path="file_format" type="str">
+  The format of input audio:
+  - `pcm_s16le_16` - 16-bit PCM at 16kHz (lower latency)
+  - `other` - Any other encoded format (default)
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration including chunk_size customization.
+</ParamField>
+
+<ResponseField name="return" type="Iterator[bytes]">
+  An iterator yielding streaming audio data chunks with background noise removed.
+</ResponseField>
+
+---
+
+## Usage Examples
+
+### Basic Noise Removal
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Remove noise from a recording
+with open("podcast_raw.mp3", "rb") as input_file:
+    cleaned_audio = client.audio_isolation.convert(audio=input_file)
+    
+    with open("podcast_clean.mp3", "wb") as output_file:
+        for chunk in cleaned_audio:
+            output_file.write(chunk)
+```
+
+### Streaming Processing
+
+```python
+import pyaudio
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Stream cleaned audio to speakers
+audio_stream = client.audio_isolation.stream(
+    audio=open("noisy_recording.wav", "rb")
+)
+
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16,
+                channels=1,
+                rate=44100,
+                output=True)
+
+for chunk in audio_stream:
+    stream.write(chunk)
+
+stream.stop_stream()
+stream.close()
+p.terminate()
+```
+
+### Low-Latency PCM Processing
+
+```python
+from elevenlabs import ElevenLabs
+import numpy as np
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Process PCM audio for lowest latency
+# Assuming you have 16-bit PCM at 16kHz, mono, little-endian
+pcm_audio = open("audio_16khz_16bit_mono.pcm", "rb").read()
+
+cleaned_audio = client.audio_isolation.convert(
+    audio=pcm_audio,
+    file_format="pcm_s16le_16"
+)
+
+with open("cleaned_audio.pcm", "wb") as f:
+    for chunk in cleaned_audio:
+        f.write(chunk)
+```
+
+---
+
+## Async Methods
+
+All methods have async equivalents:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def clean_audio():
+    audio_iterator = await client.audio_isolation.convert(
+        audio=open("noisy_audio.mp3", "rb")
+    )
+    
+    with open("clean_audio.mp3", "wb") as f:
+        async for chunk in audio_iterator:
+            f.write(chunk)
+
+asyncio.run(clean_audio())
+```
+
+---
+
+## Integration with Speech-to-Speech
+
+Audio isolation can be integrated with speech-to-speech conversion:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Option 1: Use remove_background_noise parameter in speech_to_speech
+audio_iterator = client.speech_to_speech.convert(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    audio=open("input_audio.mp3", "rb"),
+    remove_background_noise=True  # Automatically applies audio isolation
+)
+
+# Option 2: Manual isolation then conversion
+with open("noisy_input.mp3", "rb") as f:
+    # First, isolate the audio
+    isolated = client.audio_isolation.convert(audio=f)
+    
+    # Collect isolated audio
+    isolated_bytes = b''.join(isolated)
+    
+    # Then convert the voice
+    converted = client.speech_to_speech.convert(
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        audio=isolated_bytes
+    )
+```
+
+---
+
+## Use Cases
+
+- **Podcast production**: Remove background noise from recordings
+- **Call center quality**: Clean up customer service recordings
+- **Interview cleanup**: Improve audio quality of recorded interviews
+- **Content creation**: Prepare audio for further processing or editing
+- **Voice conversion prep**: Clean audio before applying speech-to-speech
+- **Transcription improvement**: Remove noise before speech-to-text processing
+
+---
+
+## Technical Details
+
+### Supported Input Formats
+
+- MP3, WAV, M4A, FLAC, OGG, OPUS
+- PCM (16-bit, 16kHz, mono) for lowest latency
+- Most common audio codecs and containers
+
+### Processing Notes
+
+- The model is optimized for speech isolation
+- Works best with recordings containing human speech
+- Background music and ambient sounds are removed
+- Processing time depends on audio length
+- For real-time applications, use the `stream()` method
+- Use `pcm_s16le_16` format for lowest latency

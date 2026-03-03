@@ -1,0 +1,306 @@
+---
+title: "History"
+description: "Manage your generated audio history"
+---
+
+The History client provides methods to manage and retrieve your generated audio history items.
+
+## list
+
+Returns a list of your generated audio.
+
+```python
+client.history.list(
+    page_size=100,
+    start_after_history_item_id="item_123",
+    voice_id="voice_id",
+    model_id="model_id",
+    date_before_unix=1234567890,
+    date_after_unix=1234567890,
+    sort_direction="desc",
+    search="search term",
+    source="TTS"
+)
+```
+
+### Parameters
+
+<ParamField path="page_size" type="int" optional>
+  How many history items to return at maximum. Cannot exceed 1000, defaults to 100.
+</ParamField>
+
+<ParamField path="start_after_history_item_id" type="str" optional>
+  After which ID to start fetching, use this parameter to paginate across a large collection of history items. If not provided, history items will be fetched starting from the most recently created one ordered descending by their creation date.
+</ParamField>
+
+<ParamField path="voice_id" type="str" optional>
+  ID of the voice to be filtered for. You can use the Get voices endpoint to list all available voices.
+</ParamField>
+
+<ParamField path="model_id" type="str" optional>
+  Model ID used for filtering history items.
+</ParamField>
+
+<ParamField path="date_before_unix" type="int" optional>
+  Unix timestamp to filter history items before this date (exclusive).
+</ParamField>
+
+<ParamField path="date_after_unix" type="int" optional>
+  Unix timestamp to filter history items after this date (inclusive).
+</ParamField>
+
+<ParamField path="sort_direction" type="str" optional>
+  Sort direction for the results. Can be "asc" or "desc".
+</ParamField>
+
+<ParamField path="search" type="str" optional>
+  Search term used for filtering.
+</ParamField>
+
+<ParamField path="source" type="str" optional>
+  Source of the generated history item (e.g., "TTS").
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+### Response
+
+<ResponseField name="GetSpeechHistoryResponse" type="object">
+  Returns a list of speech history items.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Get recent history with pagination
+history = client.history.list(
+    page_size=50,
+    sort_direction="desc"
+)
+```
+
+---
+
+## get
+
+Retrieves a specific history item by ID.
+
+```python
+client.history.get(
+    history_item_id="VW7YKqPnjY4h39yTbx2L"
+)
+```
+
+### Parameters
+
+<ParamField path="history_item_id" type="str" required>
+  ID of the history item to retrieve. You can use the list endpoint to get a list of history items.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+### Response
+
+<ResponseField name="SpeechHistoryItemResponse" type="object">
+  Returns the requested history item with its metadata.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Get a specific history item
+item = client.history.get(
+    history_item_id="VW7YKqPnjY4h39yTbx2L"
+)
+```
+
+---
+
+## delete
+
+Delete a history item by its ID.
+
+```python
+client.history.delete(
+    history_item_id="VW7YKqPnjY4h39yTbx2L"
+)
+```
+
+### Parameters
+
+<ParamField path="history_item_id" type="str" required>
+  ID of the history item to delete. You can use the list endpoint to get a list of history items.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+### Response
+
+<ResponseField name="DeleteHistoryItemResponse" type="object">
+  Returns confirmation of the deletion.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Delete a history item
+response = client.history.delete(
+    history_item_id="VW7YKqPnjY4h39yTbx2L"
+)
+```
+
+---
+
+## get_audio
+
+Returns the audio of a history item.
+
+```python
+client.history.get_audio(
+    history_item_id="VW7YKqPnjY4h39yTbx2L"
+)
+```
+
+### Parameters
+
+<ParamField path="history_item_id" type="str" required>
+  ID of the history item to retrieve audio for. You can use the list endpoint to get a list of history items.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions" optional>
+  Request-specific configuration. You can pass in configuration such as `chunk_size` to customize the request and response.
+</ParamField>
+
+### Response
+
+<ResponseField name="Iterator[bytes]" type="Iterator[bytes]">
+  Returns the audio file of the history item as an iterator of bytes.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Get audio from a history item
+audio = client.history.get_audio(
+    history_item_id="VW7YKqPnjY4h39yTbx2L"
+)
+
+# Save to file
+with open("output.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+---
+
+## download
+
+Download one or more history items. If one history item ID is provided, returns a single audio file. If multiple history item IDs are provided, returns a .zip file.
+
+```python
+client.history.download(
+    history_item_ids=["item_1", "item_2"],
+    output_format="mp3"
+)
+```
+
+### Parameters
+
+<ParamField path="history_item_ids" type="List[str]" required>
+  A list of history items to download. You can get IDs of history items using the list endpoint.
+</ParamField>
+
+<ParamField path="output_format" type="str" optional>
+  Output format to transcode the audio file. Can be "wav" or "default".
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions" optional>
+  Request-specific configuration. You can pass in configuration such as `chunk_size` to customize the request and response.
+</ParamField>
+
+### Response
+
+<ResponseField name="Iterator[bytes]" type="Iterator[bytes]">
+  Returns the requested audio file, or a zip file containing multiple audio files when multiple history items are requested.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Download multiple history items as a zip
+audio = client.history.download(
+    history_item_ids=["item_1", "item_2", "item_3"]
+)
+
+# Save to file
+with open("history_items.zip", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+
+# Download a single item
+audio = client.history.download(
+    history_item_ids=["item_1"],
+    output_format="wav"
+)
+```
+
+---
+
+## Async Methods
+
+All methods are also available as async methods using `AsyncElevenLabs` client:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def main():
+    # List history items
+    history = await client.history.list(page_size=50)
+    
+    # Get a specific item
+    item = await client.history.get(history_item_id="VW7YKqPnjY4h39yTbx2L")
+    
+    # Delete an item
+    await client.history.delete(history_item_id="VW7YKqPnjY4h39yTbx2L")
+    
+    # Get audio (async iterator)
+    async for chunk in await client.history.get_audio(history_item_id="item_id"):
+        # Process audio chunks
+        pass
+    
+    # Download items (async iterator)
+    async for chunk in await client.history.download(history_item_ids=["item_1"]):
+        # Process download chunks
+        pass
+
+asyncio.run(main())
+```

@@ -1,0 +1,297 @@
+---
+title: 'Dubbing'
+description: 'Dub audio and video content into different languages while preserving voice characteristics and timing'
+---
+
+## Overview
+
+The Dubbing API allows you to automatically dub audio and video content into different languages while preserving the original voice characteristics, emotion, and timing.
+
+## Methods
+
+### create()
+
+Create a new dubbing project from an audio or video file.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.dubbing.create(
+    file=open("video.mp4", "rb"),
+    name="My Video Dub",
+    source_lang="en",
+    target_lang="es",
+    num_speakers=2
+)
+
+print(f"Dubbing ID: {response.dubbing_id}")
+print(f"Status: {response.status}")
+```
+
+<ParamField path="file" type="core.File">
+  The audio or video file to dub. Either `file` or `source_url` must be provided.
+</ParamField>
+
+<ParamField path="source_url" type="str">
+  URL of the source video/audio file. Either `file` or `source_url` must be provided.
+</ParamField>
+
+<ParamField path="name" type="str">
+  Name of the dubbing project for identification purposes.
+</ParamField>
+
+<ParamField path="source_lang" type="str">
+  Source language. Expects a valid ISO 639-1 or ISO 639-3 language code (e.g., "en", "es", "fr", "de").
+</ParamField>
+
+<ParamField path="target_lang" type="str">
+  The target language to dub the content into. Expects a valid ISO 639-1 or ISO 639-3 language code.
+</ParamField>
+
+<ParamField path="target_accent" type="str">
+  [Experimental] An accent to apply when selecting voices from the library and to inform translation dialect preferences.
+</ParamField>
+
+<ParamField path="num_speakers" type="int">
+  Number of speakers to use for dubbing. Set to 0 to automatically detect the number of speakers. If specified, helps the model identify distinct speakers.
+</ParamField>
+
+<ParamField path="watermark" type="bool">
+  Whether to apply a watermark to the output video.
+</ParamField>
+
+<ParamField path="start_time" type="int">
+  Start time of the source video/audio file in seconds. Use to dub only a portion of the content.
+</ParamField>
+
+<ParamField path="end_time" type="int">
+  End time of the source video/audio file in seconds. Use to dub only a portion of the content.
+</ParamField>
+
+<ParamField path="highest_resolution" type="bool">
+  Whether to use the highest resolution available for video output.
+</ParamField>
+
+<ParamField path="drop_background_audio" type="bool">
+  Advanced setting. Whether to drop background audio from the final dub. Can improve dub quality for content that shouldn't have background tracks, such as speeches or monologues.
+</ParamField>
+
+<ParamField path="use_profanity_filter" type="bool">
+  [BETA] Whether transcripts should have profanities censored with the word `[censored]`.
+</ParamField>
+
+<ParamField path="dubbing_studio" type="bool">
+  Whether to prepare the dub for edits in dubbing studio or as a dubbing resource.
+</ParamField>
+
+<ParamField path="disable_voice_cloning" type="bool">
+  Instead of using voice cloning, use a similar voice from the ElevenLabs Voice Library. Voices used from the library count towards workspace custom voice limits. Using this feature requires the `add_voice_from_voice_library` permission.
+</ParamField>
+
+<ParamField path="mode" type="str">
+  The mode for running the dubbing job:
+  - `automatic` (default) - Automatic processing
+  - `manual` - Manual mode with CSV transcript (experimental, not recommended for production)
+</ParamField>
+
+<ParamField path="csv_file" type="core.File">
+  CSV file containing manual transcript for dubbing. Only used when `mode="manual"`.
+</ParamField>
+
+<ParamField path="csv_fps" type="float">
+  Frames per second to use when parsing a CSV file. If not provided, FPS will be inferred from timecodes.
+</ParamField>
+
+<ParamField path="foreground_audio_file" type="core.File">
+  Custom foreground audio file to use in the dub.
+</ParamField>
+
+<ParamField path="background_audio_file" type="core.File">
+  Custom background audio file to use in the dub.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="DoDubbingResponse">
+  Response containing:
+  - `dubbing_id` (str) - Unique identifier for the dubbing project
+  - `status` (str) - Current status of the dubbing job
+  - `expected_duration_sec` (int) - Expected processing time in seconds
+</ResponseField>
+
+---
+
+### get()
+
+Get metadata about a dubbing project, including its current status.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+metadata = client.dubbing.get(dubbing_id="dub_abc123")
+
+print(f"Status: {metadata.status}")
+print(f"Progress: {metadata.progress}%")
+
+if metadata.status == "completed":
+    print(f"Output URL: {metadata.target_video_url}")
+```
+
+<ParamField path="dubbing_id" type="str" required>
+  ID of the dubbing project to retrieve.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="DubbingMetadataResponse">
+  Metadata containing:
+  - `dubbing_id` (str) - Project ID
+  - `status` (str) - Current status (dubbing, dubbed, completed, failed)
+  - `progress` (float) - Completion progress percentage
+  - `target_video_url` (str) - URL to download the dubbed video (when completed)
+  - `source_lang` (str) - Source language code
+  - `target_lang` (str) - Target language code
+  - `created_at` (datetime) - Project creation timestamp
+</ResponseField>
+
+---
+
+### list()
+
+List all dubbing projects you have access to.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.dubbing.list(
+    page_size=20,
+    dubbing_status="completed",
+    filter_by_creator="personal"
+)
+
+for dub in response.items:
+    print(f"{dub.name}: {dub.status}")
+
+# Pagination
+if response.next_cursor:
+    next_page = client.dubbing.list(cursor=response.next_cursor)
+```
+
+<ParamField path="cursor" type="str">
+  Cursor for pagination. Used to fetch the next page of results. Returned in the response.
+</ParamField>
+
+<ParamField path="page_size" type="int">
+  Maximum number of dubs to return. Cannot exceed 200, defaults to 100.
+</ParamField>
+
+<ParamField path="dubbing_status" type="str">
+  Filter by dubbing status:
+  - `dubbing` - Currently processing
+  - `dubbed` - Dubbing complete, awaiting finalization
+  - `completed` - Fully completed
+  - `failed` - Failed processing
+</ParamField>
+
+<ParamField path="filter_by_creator" type="str">
+  Filter by creator:
+  - `personal` - Only dubs created by you
+  - `shared` - Only dubs shared with you
+</ParamField>
+
+<ParamField path="order_by" type="str">
+  Field to order results by. Currently supports `created_at`.
+</ParamField>
+
+<ParamField path="order_direction" type="str">
+  Order direction:
+  - `ASCENDING` - Oldest first
+  - `DESCENDING` - Newest first (default)
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="DubbingMetadataPageResponseModel">
+  Paginated response containing:
+  - `items` (List[DubbingMetadata]) - List of dubbing projects
+  - `next_cursor` (str) - Cursor for next page (if available)
+  - `has_more` (bool) - Whether more results exist
+</ResponseField>
+
+---
+
+### delete()
+
+Delete a dubbing project.
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.dubbing.delete(dubbing_id="dub_abc123")
+print(f"Deleted: {response.success}")
+```
+
+<ParamField path="dubbing_id" type="str" required>
+  ID of the dubbing project to delete.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+<ResponseField name="return" type="DeleteDubbingResponseModel">
+  Response containing:
+  - `success` (bool) - Whether deletion was successful
+</ResponseField>
+
+---
+
+## Async Methods
+
+All methods have async equivalents:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def create_dub():
+    response = await client.dubbing.create(
+        file=open("video.mp4", "rb"),
+        source_lang="en",
+        target_lang="es"
+    )
+    
+    # Poll for completion
+    while True:
+        metadata = await client.dubbing.get(response.dubbing_id)
+        if metadata.status == "completed":
+            print(f"Done! Download from: {metadata.target_video_url}")
+            break
+        await asyncio.sleep(5)
+
+asyncio.run(create_dub())
+```
+
+## Use Cases
+
+- **Content localization**: Dub videos for international audiences
+- **E-learning**: Translate educational content while preserving instructor's voice characteristics
+- **Marketing**: Adapt promotional videos for different markets
+- **Entertainment**: Localize movies, TV shows, and podcasts
+- **Accessibility**: Make content available in multiple languages

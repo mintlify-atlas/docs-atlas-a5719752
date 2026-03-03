@@ -1,0 +1,271 @@
+---
+title: 'Clone Voice (IVC)'
+description: 'Create an instant voice clone from audio samples'
+icon: 'clone'
+---
+
+## Overview
+
+The `voices.ivc.create()` method creates an instant voice clone (IVC) and adds it to your collection of voices. IVC allows you to clone a voice from audio samples in seconds.
+
+<Note>
+  IVC (Instant Voice Cloning) creates a voice clone quickly from audio samples. For higher quality clones with more customization options, consider using PVC (Professional Voice Cloning).
+</Note>
+
+## Method Signature
+
+```python
+client.voices.ivc.create(
+    name: str,
+    files: List[core.File],
+    remove_background_noise: Optional[bool] = None,
+    description: Optional[str] = None,
+    labels: Optional[IvcCreateRequestLabels] = None,
+    request_options: Optional[RequestOptions] = None
+) -> AddVoiceIvcResponseModel
+```
+
+## Parameters
+
+<ParamField name="name" type="str" required>
+  The name that identifies this voice. This will be displayed in the dropdown of the website.
+  
+  Example: `"Sarah - Customer Support"`
+</ParamField>
+
+<ParamField name="files" type="List[core.File]" required>
+  List of audio files to use for voice cloning. Provide high-quality audio samples for best results.
+  
+  <Note>
+    **Best Practices for Audio Samples:**
+    - Use clear, high-quality recordings
+    - Avoid background noise (or use `remove_background_noise`)
+    - Include samples with varied speech patterns
+    - Total audio should be at least 1 minute
+    - MP3, WAV, or other common audio formats supported
+  </Note>
+</ParamField>
+
+<ParamField name="remove_background_noise" type="bool" optional default="false">
+  If set, will remove background noise from voice samples using the audio isolation model. 
+  
+  <Warning>
+    If the samples do not include background noise, enabling this can make the quality worse.
+  </Warning>
+</ParamField>
+
+<ParamField name="description" type="str" optional>
+  A description of the voice. Helps you remember the voice's characteristics or intended use.
+  
+  Example: `"Warm, friendly female voice for customer support"`
+</ParamField>
+
+<ParamField name="labels" type="Dict[str, str]" optional>
+  Labels for the voice. Keys can include:
+  - `language` - The primary language (e.g., `"en"`, `"es"`)
+  - `accent` - The accent type (e.g., `"american"`, `"british"`)
+  - `gender` - The gender (e.g., `"female"`, `"male"`)
+  - `age` - The age range (e.g., `"young"`, `"middle-aged"`)
+  
+  Example: `{"language": "en", "accent": "american", "gender": "female", "age": "young"}`
+</ParamField>
+
+<ParamField name="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+## Returns
+
+<ResponseField name="AddVoiceIvcResponseModel" type="object">
+  Response containing the newly created voice information.
+  
+  <Expandable title="Response Fields">
+    <ResponseField name="voice_id" type="str" required>
+      The ID of the newly created voice. Use this ID to generate speech with the cloned voice.
+    </ResponseField>
+    
+    <ResponseField name="requires_verification" type="bool" required>
+      Whether the voice requires verification before it can be used. Some voices may require verification to ensure proper usage rights.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Voice Clone
+
+Create a voice clone from a single audio file:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+with open("sample.mp3", "rb") as f:
+    response = client.voices.ivc.create(
+        name="My Cloned Voice",
+        files=[f]
+    )
+
+print(f"Voice cloned successfully!")
+print(f"Voice ID: {response.voice_id}")
+print(f"Requires verification: {response.requires_verification}")
+```
+
+### Clone with Multiple Samples
+
+Create a voice clone from multiple audio samples for better quality:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio_files = ["sample1.mp3", "sample2.mp3", "sample3.mp3"]
+
+with open(audio_files[0], "rb") as f1, \
+     open(audio_files[1], "rb") as f2, \
+     open(audio_files[2], "rb") as f3:
+    
+    response = client.voices.ivc.create(
+        name="Professional Voice Clone",
+        files=[f1, f2, f3],
+        description="Voice clone for professional narration"
+    )
+
+print(f"Voice ID: {response.voice_id}")
+```
+
+### Clone with Background Noise Removal
+
+Create a voice clone and remove background noise:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+with open("noisy_sample.mp3", "rb") as f:
+    response = client.voices.ivc.create(
+        name="Clean Voice Clone",
+        files=[f],
+        remove_background_noise=True,
+        description="Cloned from noisy audio sample"
+    )
+
+print(f"Voice ID: {response.voice_id}")
+```
+
+### Clone with Labels
+
+Create a voice clone with descriptive labels:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+with open("british_voice.mp3", "rb") as f:
+    response = client.voices.ivc.create(
+        name="James - British Narrator",
+        files=[f],
+        description="British male voice for audiobook narration",
+        labels={
+            "language": "en",
+            "accent": "british",
+            "gender": "male",
+            "age": "middle-aged"
+        }
+    )
+
+print(f"Voice created: {response.voice_id}")
+```
+
+### Use Cloned Voice for Text-to-Speech
+
+Create a voice clone and immediately use it for generation:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Clone the voice
+with open("sample.mp3", "rb") as f:
+    clone_response = client.voices.ivc.create(
+        name="My Voice",
+        files=[f]
+    )
+
+voice_id = clone_response.voice_id
+print(f"Voice cloned: {voice_id}")
+
+# Use the cloned voice for text-to-speech
+if not clone_response.requires_verification:
+    audio = client.text_to_speech.convert(
+        voice_id=voice_id,
+        text="Hello! This is my cloned voice speaking."
+    )
+    
+    # Save the audio
+    with open("output.mp3", "wb") as f:
+        f.write(audio)
+    
+    print("Audio generated with cloned voice!")
+else:
+    print("Voice requires verification before use.")
+```
+
+### Async Voice Cloning
+
+Create a voice clone asynchronously:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def main():
+    with open("sample.mp3", "rb") as f:
+        response = await client.voices.ivc.create(
+            name="Async Cloned Voice",
+            files=[f],
+            description="Voice cloned asynchronously"
+        )
+    
+    print(f"Voice ID: {response.voice_id}")
+    print(f"Requires verification: {response.requires_verification}")
+
+asyncio.run(main())
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Audio Quality Tips">
+    - Use lossless or high-bitrate audio formats (WAV, FLAC, or 320kbps MP3)
+    - Ensure samples are free from compression artifacts
+    - Remove silence from the beginning and end of samples
+    - Aim for consistent volume levels across samples
+  </Accordion>
+  
+  <Accordion title="Sample Selection">
+    - Include diverse emotional tones and speech patterns
+    - Use samples with clear pronunciation
+    - Avoid samples with overlapping voices or music
+    - Provide at least 1-2 minutes of total audio
+  </Accordion>
+  
+  <Accordion title="Voice Verification">
+    - Some voices may require verification to prevent misuse
+    - Ensure you have proper rights to clone the voice
+    - Follow ElevenLabs' terms of service for voice cloning
+  </Accordion>
+</AccordionGroup>
+
+## Related Methods
+
+- [Search Voices](/api-reference/voices/search) - List and filter available voices
+- [Get Voice](/api-reference/voices/get) - Retrieve voice metadata
+- [Voice Settings](/api-reference/voices/settings) - Configure voice settings

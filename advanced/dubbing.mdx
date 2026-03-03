@@ -1,0 +1,381 @@
+---
+title: "Dubbing"
+description: "Automatically dub audio and video content into different languages"
+---
+
+## Overview
+
+The Dubbing API allows you to automatically translate and dub audio or video files into different languages while preserving the original speaker's voice characteristics and timing.
+
+## Create a Dubbing Project
+
+Dub a video or audio file into a target language:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+response = client.dubbing.create(
+    file=open("video.mp4", "rb"),
+    name="My First Dub",
+    source_lang="en",
+    target_lang="es",
+    num_speakers=1
+)
+
+print(f"Dubbing ID: {response.dubbing_id}")
+print(f"Expected duration: {response.expected_duration_sec}s")
+```
+
+## From URL
+
+Dub content directly from a URL:
+
+```python
+response = client.dubbing.create(
+    source_url="https://example.com/video.mp4",
+    name="URL Dubbing Project",
+    source_lang="en",
+    target_lang="fr",
+    num_speakers=2
+)
+```
+
+## Parameters
+
+<ParamField path="file" type="File">
+  The audio or video file to dub (either file or source_url required).
+</ParamField>
+
+<ParamField path="source_url" type="string">
+  URL of the source video/audio file (either file or source_url required).
+</ParamField>
+
+<ParamField path="name" type="string">
+  Name of the dubbing project.
+</ParamField>
+
+<ParamField path="source_lang" type="string">
+  Source language. Expects a valid ISO 639-1 or ISO 639-3 language code.
+</ParamField>
+
+<ParamField path="target_lang" type="string">
+  Target language to dub the content into. Expects a valid ISO 639-1 or ISO 639-3 language code.
+</ParamField>
+
+<ParamField path="num_speakers" type="integer">
+  Number of speakers in the content. Set to 0 to automatically detect.
+</ParamField>
+
+<ParamField path="target_accent" type="string">
+  [Experimental] An accent to apply when selecting voices from the library.
+</ParamField>
+
+<ParamField path="watermark" type="boolean">
+  Whether to apply watermark to the output video.
+</ParamField>
+
+<ParamField path="start_time" type="integer">
+  Start time of the source video/audio file in seconds.
+</ParamField>
+
+<ParamField path="end_time" type="integer">
+  End time of the source video/audio file in seconds.
+</ParamField>
+
+<ParamField path="highest_resolution" type="boolean">
+  Whether to use the highest resolution available.
+</ParamField>
+
+<ParamField path="drop_background_audio" type="boolean">
+  Whether to drop background audio from the final dub. Can improve quality for speeches or monologues.
+</ParamField>
+
+<ParamField path="use_profanity_filter" type="boolean">
+  [BETA] Whether transcripts should have profanities censored with '[censored]'.
+</ParamField>
+
+<ParamField path="dubbing_studio" type="boolean">
+  Whether to prepare dub for edits in dubbing studio.
+</ParamField>
+
+<ParamField path="disable_voice_cloning" type="boolean">
+  Use similar voices from the ElevenLabs Voice Library instead of voice cloning.
+</ParamField>
+
+## Check Dubbing Status
+
+Monitor the progress of your dubbing project:
+
+```python
+metadata = client.dubbing.get(dubbing_id="your-dubbing-id")
+
+print(f"Status: {metadata.status}")
+print(f"Name: {metadata.name}")
+print(f"Source language: {metadata.source_language}")
+print(f"Target language: {metadata.target_language}")
+```
+
+## Wait for Completion
+
+Poll until dubbing is complete:
+
+```python
+import time
+
+def wait_for_dubbing(client, dubbing_id, max_wait=600):
+    """Wait for dubbing to complete"""
+    start_time = time.time()
+    
+    while time.time() - start_time < max_wait:
+        metadata = client.dubbing.get(dubbing_id)
+        
+        if metadata.status == "dubbed":
+            print("Dubbing complete!")
+            return metadata
+        elif metadata.status == "dubbing":
+            print(f"Still processing... ({metadata.status})")
+            time.sleep(10)
+        else:
+            print(f"Status: {metadata.status}")
+            time.sleep(5)
+    
+    raise TimeoutError("Dubbing took too long")
+
+metadata = wait_for_dubbing(client, response.dubbing_id)
+```
+
+## Download Dubbed Audio
+
+Retrieve the dubbed audio file:
+
+```python
+# Get the dubbed audio for the target language
+audio_data = client.dubbing.audio.get(
+    dubbing_id="your-dubbing-id",
+    language_code="es"
+)
+
+# Save to file
+with open("dubbed_audio.mp4", "wb") as f:
+    for chunk in audio_data:
+        f.write(chunk)
+```
+
+## List Dubbing Projects
+
+Retrieve all your dubbing projects:
+
+```python
+response = client.dubbing.list(
+    page_size=10,
+    dubbing_status="dubbed",
+    order_direction="DESCENDING"
+)
+
+for dub in response.dubbings:
+    print(f"{dub.name}: {dub.status}")
+
+# Pagination
+if response.next_cursor:
+    next_page = client.dubbing.list(
+        cursor=response.next_cursor,
+        page_size=10
+    )
+```
+
+## Delete a Dubbing Project
+
+Remove a dubbing project:
+
+```python
+response = client.dubbing.delete(dubbing_id="your-dubbing-id")
+print(f"Deleted: {response.success}")
+```
+
+## Advanced Options
+
+### Automatic Speaker Detection
+
+Let the system detect the number of speakers:
+
+```python
+response = client.dubbing.create(
+    file=open("podcast.mp3", "rb"),
+    name="Podcast Dub",
+    source_lang="en",
+    target_lang="de",
+    num_speakers=0  # Auto-detect
+)
+```
+
+### Segment-Specific Dubbing
+
+Dub only a portion of the content:
+
+```python
+response = client.dubbing.create(
+    file=open("long_video.mp4", "rb"),
+    name="Video Segment",
+    source_lang="en",
+    target_lang="ja",
+    start_time=60,   # Start at 1 minute
+    end_time=180,    # End at 3 minutes
+    num_speakers=1
+)
+```
+
+### Drop Background Audio
+
+Improve clarity for speech-only content:
+
+```python
+response = client.dubbing.create(
+    file=open("speech.mp3", "rb"),
+    name="Clean Speech",
+    source_lang="en",
+    target_lang="it",
+    drop_background_audio=True,  # Remove background audio
+    num_speakers=1
+)
+```
+
+### Use Voice Library Instead of Cloning
+
+```python
+response = client.dubbing.create(
+    file=open("video.mp4", "rb"),
+    name="Library Voices",
+    source_lang="en",
+    target_lang="pt",
+    disable_voice_cloning=True,  # Use Voice Library
+    num_speakers=2
+)
+```
+
+## Complete Example
+
+Full workflow from creation to download:
+
+```python
+import time
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Create dubbing project
+print("Creating dubbing project...")
+response = client.dubbing.create(
+    file=open("interview.mp4", "rb"),
+    name="Interview Spanish Dub",
+    source_lang="en",
+    target_lang="es",
+    num_speakers=2,
+    highest_resolution=True
+)
+
+dubbing_id = response.dubbing_id
+print(f"Dubbing ID: {dubbing_id}")
+
+# Wait for completion
+print("Waiting for dubbing to complete...")
+while True:
+    metadata = client.dubbing.get(dubbing_id)
+    print(f"Status: {metadata.status}")
+    
+    if metadata.status == "dubbed":
+        break
+    elif metadata.status in ["error", "failed"]:
+        raise Exception(f"Dubbing failed: {metadata.error_message}")
+    
+    time.sleep(10)
+
+# Download the dubbed video
+print("Downloading dubbed content...")
+audio_data = client.dubbing.audio.get(
+    dubbing_id=dubbing_id,
+    language_code="es"
+)
+
+with open("interview_spanish.mp4", "wb") as f:
+    for chunk in audio_data:
+        f.write(chunk)
+
+print("Dubbing complete!")
+```
+
+## Async Support
+
+All operations support async:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+async def dub_content():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    response = await client.dubbing.create(
+        file=open("video.mp4", "rb"),
+        name="Async Dub",
+        source_lang="en",
+        target_lang="fr",
+        num_speakers=1
+    )
+    
+    return response.dubbing_id
+
+dubbing_id = asyncio.run(dub_content())
+```
+
+## Supported Languages
+
+Dubbing supports 30+ languages. Use ISO 639-1 or ISO 639-3 codes:
+
+- English: `en`
+- Spanish: `es`
+- French: `fr`
+- German: `de`
+- Italian: `it`
+- Portuguese: `pt`
+- Japanese: `ja`
+- Korean: `ko`
+- And many more...
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Content Localization" icon="globe">
+    Reach global audiences with dubbed content
+  </Card>
+  <Card title="E-Learning" icon="graduation-cap">
+    Make educational content accessible worldwide
+  </Card>
+  <Card title="Marketing Videos" icon="video">
+    Create multilingual marketing campaigns
+  </Card>
+  <Card title="Entertainment" icon="film">
+    Dub movies, shows, and podcasts
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Tip>
+  - Provide accurate speaker counts for better results
+  - Use `drop_background_audio=True` for speech-only content
+  - Enable `highest_resolution=True` for video content
+  - Set appropriate start/end times for long content
+  - Use automatic speaker detection (`num_speakers=0`) when unsure
+</Tip>
+
+<Warning>
+  Dubbing is a resource-intensive operation and may take several minutes depending on content length and complexity.
+</Warning>
+
+## Related Features
+
+- [Voice Cloning](/advanced/voice-cloning) - Create custom voices for dubbing
+- [Speech to Speech](/advanced/speech-to-speech) - Voice conversion
+- [Audio Isolation](/advanced/audio-isolation) - Clean audio before dubbing

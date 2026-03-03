@@ -1,0 +1,340 @@
+---
+title: "Audio Interfaces"
+description: "Reference for audio input/output interfaces"
+---
+
+## Overview
+
+Audio interfaces provide an abstraction for handling audio input and output in conversational AI sessions. ElevenLabs provides default implementations, but you can also create custom interfaces.
+
+---
+
+## DefaultAudioInterface
+
+Default implementation using PyAudio for synchronous audio I/O.
+
+### Requirements
+
+```bash
+pip install pyaudio
+```
+
+### Constructor
+
+```python
+DefaultAudioInterface()
+```
+
+Creates a default audio interface that uses PyAudio for audio input and output.
+
+**Raises:** `ImportError` if PyAudio is not installed.
+
+### Configuration
+
+```python
+INPUT_FRAMES_PER_BUFFER = 4000   # 250ms @ 16kHz
+OUTPUT_FRAMES_PER_BUFFER = 1000  # 62.5ms @ 16kHz
+```
+
+Audio streams use 16-bit PCM mono format at 16kHz sample rate.
+
+### Methods
+
+#### start
+
+```python
+audio_interface.start(input_callback: Callable[[bytes], None])
+```
+
+Starts the audio interface. Called once before the conversation starts.
+
+<ParamField path="input_callback" type="Callable[[bytes], None]" required>
+  Callback function that will be called regularly with input audio chunks from the user. Audio is in 16-bit PCM mono format at 16kHz. Recommended chunk size is 4000 samples (250 milliseconds).
+</ParamField>
+
+#### stop
+
+```python
+audio_interface.stop()
+```
+
+Stops the audio interface. Called once after the conversation ends. Cleans up resources and stops audio streams.
+
+#### output
+
+```python
+audio_interface.output(audio: bytes)
+```
+
+Output audio to the user.
+
+<ParamField path="audio" type="bytes" required>
+  Audio data in 16-bit PCM mono format at 16kHz. This method returns quickly and does not block.
+</ParamField>
+
+#### interrupt
+
+```python
+audio_interface.interrupt()
+```
+
+Interruption signal to stop audio output. Called when the user interrupts the agent, and all previously buffered audio output should be stopped.
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.conversational_ai import Conversation, DefaultAudioInterface
+
+client = ElevenLabs(api_key="your-api-key")
+
+# Use default audio interface
+audio_interface = DefaultAudioInterface()
+
+conversation = Conversation(
+    client=client,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+)
+
+conversation.start_session()
+```
+
+---
+
+## AsyncDefaultAudioInterface
+
+Default implementation using PyAudio for asynchronous audio I/O.
+
+### Requirements
+
+```bash
+pip install pyaudio
+```
+
+### Constructor
+
+```python
+AsyncDefaultAudioInterface()
+```
+
+Creates a default async audio interface that uses PyAudio for audio input and output.
+
+**Raises:** `ImportError` if PyAudio is not installed.
+
+### Configuration
+
+```python
+INPUT_FRAMES_PER_BUFFER = 4000   # 250ms @ 16kHz
+OUTPUT_FRAMES_PER_BUFFER = 1000  # 62.5ms @ 16kHz
+```
+
+### Methods
+
+All methods are async and should be awaited.
+
+#### start
+
+```python
+await audio_interface.start(input_callback: Callable[[bytes], Awaitable[None]])
+```
+
+Starts the audio interface.
+
+<ParamField path="input_callback" type="Callable[[bytes], Awaitable[None]]" required>
+  Async callback function that will be called regularly with input audio chunks from the user. Audio is in 16-bit PCM mono format at 16kHz.
+</ParamField>
+
+#### stop
+
+```python
+await audio_interface.stop()
+```
+
+Stops the audio interface and cleans up resources.
+
+#### output
+
+```python
+await audio_interface.output(audio: bytes)
+```
+
+Output audio to the user.
+
+<ParamField path="audio" type="bytes" required>
+  Audio data in 16-bit PCM mono format at 16kHz.
+</ParamField>
+
+#### interrupt
+
+```python
+await audio_interface.interrupt()
+```
+
+Interruption signal to stop audio output.
+
+### Example
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+from elevenlabs.conversational_ai import AsyncConversation, AsyncDefaultAudioInterface
+
+async def main():
+    client = AsyncElevenLabs(api_key="your-api-key")
+    
+    audio_interface = AsyncDefaultAudioInterface()
+    
+    conversation = AsyncConversation(
+        client=client,
+        agent_id="your-agent-id",
+        requires_auth=True,
+        audio_interface=audio_interface,
+    )
+    
+    await conversation.start_session()
+    await asyncio.sleep(30)
+    await conversation.end_session()
+
+asyncio.run(main())
+```
+
+---
+
+## Custom Audio Interfaces
+
+You can create custom audio interfaces by implementing the `AudioInterface` or `AsyncAudioInterface` abstract base classes.
+
+### AudioInterface (Sync)
+
+```python
+from elevenlabs.conversational_ai import AudioInterface
+from typing import Callable
+
+class CustomAudioInterface(AudioInterface):
+    def start(self, input_callback: Callable[[bytes], None]):
+        """Start audio streams and begin calling input_callback with audio data."""
+        # Initialize your audio input/output
+        # Call input_callback(audio_bytes) regularly with mic input
+        pass
+    
+    def stop(self):
+        """Stop audio streams and clean up resources."""
+        # Clean up audio resources
+        pass
+    
+    def output(self, audio: bytes):
+        """Play audio to the user's speakers."""
+        # Output audio to speakers
+        # Should return quickly, buffer if needed
+        pass
+    
+    def interrupt(self):
+        """Stop any currently playing audio."""
+        # Clear audio buffers and stop playback
+        pass
+```
+
+### AsyncAudioInterface (Async)
+
+```python
+from elevenlabs.conversational_ai import AsyncAudioInterface
+from typing import Callable, Awaitable
+
+class CustomAsyncAudioInterface(AsyncAudioInterface):
+    async def start(self, input_callback: Callable[[bytes], Awaitable[None]]):
+        """Start audio streams and begin calling input_callback with audio data."""
+        # Initialize your audio input/output
+        # Await input_callback(audio_bytes) regularly with mic input
+        pass
+    
+    async def stop(self):
+        """Stop audio streams and clean up resources."""
+        # Clean up audio resources
+        pass
+    
+    async def output(self, audio: bytes):
+        """Play audio to the user's speakers."""
+        # Output audio to speakers
+        pass
+    
+    async def interrupt(self):
+        """Stop any currently playing audio."""
+        # Clear audio buffers and stop playback
+        pass
+```
+
+### Custom Interface Example
+
+Here's an example of a custom audio interface that saves audio to files:
+
+```python
+from elevenlabs.conversational_ai import AudioInterface
+from typing import Callable
+import wave
+import threading
+import time
+
+class FileAudioInterface(AudioInterface):
+    def __init__(self, input_file: str, output_file: str):
+        self.input_file = input_file
+        self.output_file = output_file
+        self.input_callback = None
+        self.should_stop = False
+        self.output_data = []
+    
+    def start(self, input_callback: Callable[[bytes], None]):
+        self.input_callback = input_callback
+        self.should_stop = False
+        
+        # Start thread to read from input file and call callback
+        self.input_thread = threading.Thread(target=self._read_input)
+        self.input_thread.start()
+    
+    def _read_input(self):
+        with wave.open(self.input_file, 'rb') as wf:
+            chunk_size = 4000 * 2  # 4000 samples * 2 bytes per sample
+            while not self.should_stop:
+                data = wf.readframes(4000)
+                if not data:
+                    break
+                if self.input_callback:
+                    self.input_callback(data)
+                time.sleep(0.25)  # 250ms chunks
+    
+    def stop(self):
+        self.should_stop = True
+        self.input_thread.join()
+        
+        # Write output to file
+        with wave.open(self.output_file, 'wb') as wf:
+            wf.setnchannels(1)
+            wf.setsampwidth(2)
+            wf.setframerate(16000)
+            wf.writeframes(b''.join(self.output_data))
+    
+    def output(self, audio: bytes):
+        self.output_data.append(audio)
+    
+    def interrupt(self):
+        self.output_data.clear()
+```
+
+### Audio Format Requirements
+
+All audio interfaces must use the following format:
+- **Format:** 16-bit PCM
+- **Channels:** Mono (1 channel)
+- **Sample Rate:** 16kHz (16000 Hz)
+- **Recommended chunk size:** 4000 samples (250 milliseconds)
+
+### Implementation Notes
+
+1. **Non-blocking:** The `output()` method should return quickly and not block the calling thread. Use buffering if needed.
+
+2. **Input callback:** The `input_callback` should be called regularly with fresh audio data. Don't call it after `stop()` is called.
+
+3. **Interruption:** The `interrupt()` method should clear any buffered output audio immediately.
+
+4. **Resource cleanup:** Always clean up audio resources in the `stop()` method.

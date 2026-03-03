@@ -1,0 +1,355 @@
+---
+title: Authentication
+description: Learn how to set up API keys and configure the ElevenLabs Python SDK client
+---
+
+## Getting Your API Key
+
+To use the ElevenLabs Python SDK, you need an API key from your ElevenLabs account.
+
+<Steps>
+  <Step title="Sign Up or Log In">
+    Visit [ElevenLabs](https://elevenlabs.io) and create an account or log in to your existing account.
+  </Step>
+
+  <Step title="Access Your Profile">
+    Navigate to your profile settings by clicking on your avatar in the top-right corner.
+  </Step>
+
+  <Step title="Generate API Key">
+    Go to the API section and generate a new API key. Copy this key and store it securely.
+
+    <Warning>
+      Keep your API key secret! Never commit it to version control or share it publicly.
+    </Warning>
+  </Step>
+</Steps>
+
+## Configuration Methods
+
+There are three ways to configure authentication with the ElevenLabs SDK:
+
+### Method 1: Environment Variables (Recommended)
+
+The most secure and convenient method is using environment variables.
+
+<Steps>
+  <Step title="Create a .env file">
+    Create a `.env` file in your project root:
+
+    ```bash .env
+    ELEVENLABS_API_KEY=your_api_key_here
+    ```
+  </Step>
+
+  <Step title="Install python-dotenv">
+    Install the python-dotenv package to load environment variables:
+
+    ```bash
+    pip install python-dotenv
+    ```
+  </Step>
+
+  <Step title="Load in your code">
+    Load the environment variables and initialize the client:
+
+    ```python
+    from dotenv import load_dotenv
+    from elevenlabs.client import ElevenLabs
+
+    load_dotenv()
+
+    # The client automatically reads ELEVENLABS_API_KEY
+    elevenlabs = ElevenLabs()
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  The client automatically looks for the `ELEVENLABS_API_KEY` environment variable. You don't need to pass it explicitly.
+</Note>
+
+### Method 2: Direct API Key Parameter
+
+Pass the API key directly when initializing the client:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+elevenlabs = ElevenLabs(
+    api_key="your_api_key_here"
+)
+```
+
+<Warning>
+  Avoid hardcoding API keys in your source code. Use this method only for testing or when reading the key from a secure source.
+</Warning>
+
+### Method 3: System Environment Variable
+
+Set the API key as a system environment variable:
+
+<CodeGroup>
+
+```bash Linux/macOS
+export ELEVENLABS_API_KEY="your_api_key_here"
+```
+
+```bash Windows (CMD)
+set ELEVENLABS_API_KEY=your_api_key_here
+```
+
+```bash Windows (PowerShell)
+$env:ELEVENLABS_API_KEY="your_api_key_here"
+```
+
+</CodeGroup>
+
+Then initialize the client without parameters:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+elevenlabs = ElevenLabs()
+```
+
+## Client Configuration Options
+
+The `ElevenLabs` client accepts several configuration parameters:
+
+```python
+from elevenlabs.client import ElevenLabs
+from elevenlabs.environment import ElevenLabsEnvironment
+import httpx
+
+elevenlabs = ElevenLabs(
+    api_key="your_api_key_here",           # API key for authentication
+    base_url="https://api.elevenlabs.io",   # Custom base URL (optional)
+    environment=ElevenLabsEnvironment.PRODUCTION,  # Environment (default: PRODUCTION)
+    timeout=240.0,                          # Request timeout in seconds (default: 240)
+    httpx_client=httpx.Client()             # Custom httpx client (optional)
+)
+```
+
+### Configuration Parameters
+
+<ParamField path="api_key" type="str" optional>
+  Your ElevenLabs API key. If not provided, the client reads from the `ELEVENLABS_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str" optional>
+  Custom base URL for API requests. Useful for enterprise deployments or testing.
+</ParamField>
+
+<ParamField path="environment" type="ElevenLabsEnvironment" default="PRODUCTION">
+  The environment to use for requests. Defaults to `ElevenLabsEnvironment.PRODUCTION`.
+</ParamField>
+
+<ParamField path="timeout" type="float" default="240">
+  Request timeout in seconds. Default is 240 seconds (4 minutes).
+</ParamField>
+
+<ParamField path="httpx_client" type="httpx.Client" optional>
+  Custom pre-configured httpx client. Useful for advanced HTTP configurations like proxies or custom SSL certificates.
+</ParamField>
+
+## Async Client Authentication
+
+The async client (`AsyncElevenLabs`) uses the same authentication methods:
+
+```python
+from elevenlabs.client import AsyncElevenLabs
+
+# Using environment variable
+elevenlabs = AsyncElevenLabs()
+
+# Using direct API key
+elevenlabs = AsyncElevenLabs(
+    api_key="your_api_key_here"
+)
+```
+
+### Async Client Configuration
+
+The async client accepts the same parameters, but with an async httpx client:
+
+```python
+import httpx
+from elevenlabs.client import AsyncElevenLabs
+from elevenlabs.environment import ElevenLabsEnvironment
+
+elevenlabs = AsyncElevenLabs(
+    api_key="your_api_key_here",
+    base_url="https://api.elevenlabs.io",
+    environment=ElevenLabsEnvironment.PRODUCTION,
+    timeout=240.0,
+    httpx_client=httpx.AsyncClient()  # Note: AsyncClient for async usage
+)
+```
+
+## Testing Your Authentication
+
+Verify your authentication is working correctly:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+try:
+    elevenlabs = ElevenLabs()
+    
+    # List available voices to test authentication
+    response = elevenlabs.voices.search()
+    print(f"✓ Authentication successful! Found {len(response.voices)} voices.")
+except Exception as e:
+    print(f"✗ Authentication failed: {e}")
+```
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Never commit API keys to version control">
+    Add `.env` to your `.gitignore` file:
+
+    ```bash .gitignore
+    .env
+    *.env
+    ```
+  </Accordion>
+
+  <Accordion title="Use different keys for different environments">
+    Create separate API keys for development, staging, and production:
+
+    ```bash
+    # .env.development
+    ELEVENLABS_API_KEY=dev_key_here
+
+    # .env.production
+    ELEVENLABS_API_KEY=prod_key_here
+    ```
+  </Accordion>
+
+  <Accordion title="Rotate API keys regularly">
+    Generate new API keys periodically and revoke old ones through your ElevenLabs dashboard.
+  </Accordion>
+
+  <Accordion title="Limit API key permissions">
+    If available, use API keys with limited scopes for specific use cases.
+  </Accordion>
+
+  <Accordion title="Monitor API usage">
+    Regularly check your API usage in the ElevenLabs dashboard to detect any unauthorized access.
+  </Accordion>
+</AccordionGroup>
+
+## Custom HTTP Client Configuration
+
+For advanced use cases, configure a custom httpx client:
+
+### Proxy Configuration
+
+```python
+import httpx
+from elevenlabs.client import ElevenLabs
+
+# Configure proxy
+httpx_client = httpx.Client(
+    proxies={
+        "http://": "http://proxy.example.com:8030",
+        "https://": "http://proxy.example.com:8031",
+    }
+)
+
+elevenlabs = ElevenLabs(
+    api_key="your_api_key_here",
+    httpx_client=httpx_client
+)
+```
+
+### Custom Timeouts
+
+```python
+import httpx
+from elevenlabs.client import ElevenLabs
+
+# Set custom timeouts
+httpx_client = httpx.Client(
+    timeout=httpx.Timeout(10.0, connect=5.0)
+)
+
+elevenlabs = ElevenLabs(
+    api_key="your_api_key_here",
+    httpx_client=httpx_client
+)
+```
+
+### SSL Certificate Verification
+
+```python
+import httpx
+from elevenlabs.client import ElevenLabs
+
+# Custom SSL configuration
+httpx_client = httpx.Client(
+    verify="/path/to/custom/ca-bundle.crt"
+)
+
+elevenlabs = ElevenLabs(
+    api_key="your_api_key_here",
+    httpx_client=httpx_client
+)
+```
+
+## Troubleshooting
+
+### Common Authentication Errors
+
+<AccordionGroup>
+  <Accordion title="401 Unauthorized">
+    **Cause**: Invalid or missing API key.
+
+    **Solution**:
+    - Verify your API key is correct
+    - Check that the environment variable is set correctly
+    - Ensure you're using the latest SDK version
+  </Accordion>
+
+  <Accordion title="Environment variable not found">
+    **Cause**: The `.env` file is not being loaded or is in the wrong location.
+
+    **Solution**:
+    - Ensure `.env` is in the same directory where you run your script
+    - Verify `load_dotenv()` is called before creating the client
+    - Check that `python-dotenv` is installed
+  </Accordion>
+
+  <Accordion title="403 Forbidden">
+    **Cause**: API key doesn't have permission for the requested operation.
+
+    **Solution**:
+    - Check your subscription plan limits
+    - Verify the API key has the necessary permissions
+    - Contact ElevenLabs support if the issue persists
+  </Accordion>
+
+  <Accordion title="Timeout errors">
+    **Cause**: Request taking longer than the configured timeout.
+
+    **Solution**:
+    - Increase the timeout parameter when initializing the client
+    - Check your internet connection
+    - Verify the ElevenLabs API status
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that you've configured authentication, you're ready to:
+
+<CardGroup cols={2}>
+  <Card title="Quickstart Guide" icon="bolt" href="/quickstart">
+    Generate your first text-to-speech audio
+  </Card>
+  <Card title="API Reference" icon="book" href="https://elevenlabs.io/docs/api-reference">
+    Explore all available API methods
+  </Card>
+</CardGroup>

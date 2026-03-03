@@ -1,0 +1,392 @@
+---
+title: 'Voice Settings'
+description: 'Get and update voice settings for speech synthesis'
+icon: 'sliders'
+---
+
+## Overview
+
+Voice settings control how speech is generated for a specific voice. The `voices.settings` namespace provides methods to retrieve default settings, get current settings for a voice, and update voice-specific settings.
+
+<Info>
+  **Note:** `similarity_boost` corresponds to "Clarity + Similarity Enhancement" in the web app, and `stability` corresponds to the "Stability" slider.
+</Info>
+
+## Voice Settings Object
+
+The `VoiceSettings` object contains the following parameters:
+
+<ResponseField name="VoiceSettings" type="object">
+  <Expandable title="Settings Fields">
+    <ResponseField name="stability" type="float" optional>
+      Determines how stable the voice is and the randomness between each generation. 
+      
+      - **Range:** 0.0 to 1.0
+      - **Lower values:** Introduce broader emotional range for the voice
+      - **Higher values:** Result in a more monotonous voice with limited emotion
+      - **Default:** Varies by voice
+    </ResponseField>
+    
+    <ResponseField name="similarity_boost" type="float" optional>
+      Determines how closely the AI should adhere to the original voice when attempting to replicate it.
+      
+      - **Range:** 0.0 to 1.0
+      - **Lower values:** More creative interpretation
+      - **Higher values:** Closer adherence to original voice
+      - **Default:** Varies by voice
+    </ResponseField>
+    
+    <ResponseField name="style" type="float" optional>
+      Determines the style exaggeration of the voice. This setting attempts to amplify the style of the original speaker.
+      
+      - **Range:** 0.0 to 1.0
+      - **Note:** Consumes additional computational resources and might increase latency if set to anything other than 0
+      - **Default:** 0.0
+    </ResponseField>
+    
+    <ResponseField name="speed" type="float" optional>
+      Adjusts the speed of the voice.
+      
+      - **Range:** 0.25 to 4.0 (recommended: 0.5 to 2.0)
+      - **Default:** 1.0 (normal speed)
+      - **Values < 1.0:** Slow down the speech
+      - **Values > 1.0:** Speed up the speech
+    </ResponseField>
+    
+    <ResponseField name="use_speaker_boost" type="bool" optional>
+      Boosts the similarity to the original speaker. 
+      
+      - **Note:** Using this setting requires slightly higher computational load, which increases latency
+      - **Default:** true
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+## Get Default Settings
+
+Retrieves the default settings for voices.
+
+### Method Signature
+
+```python
+client.voices.settings.get_default(
+    request_options: Optional[RequestOptions] = None
+) -> VoiceSettings
+```
+
+### Parameters
+
+<ParamField name="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+### Returns
+
+<ResponseField name="VoiceSettings" type="object">
+  The default voice settings object.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+default_settings = client.voices.settings.get_default()
+
+print(f"Default Stability: {default_settings.stability}")
+print(f"Default Similarity Boost: {default_settings.similarity_boost}")
+print(f"Default Style: {default_settings.style}")
+print(f"Default Speed: {default_settings.speed}")
+print(f"Default Speaker Boost: {default_settings.use_speaker_boost}")
+```
+
+---
+
+## Get Voice Settings
+
+Retrieves the current settings for a specific voice.
+
+### Method Signature
+
+```python
+client.voices.settings.get(
+    voice_id: str,
+    request_options: Optional[RequestOptions] = None
+) -> VoiceSettings
+```
+
+### Parameters
+
+<ParamField name="voice_id" type="str" required>
+  Voice ID to be used. You can use the [Search Voices](/api-reference/voices/search) endpoint to list all available voices.
+  
+  Example: `"21m00Tcm4TlvDq8ikWAM"`
+</ParamField>
+
+<ParamField name="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+### Returns
+
+<ResponseField name="VoiceSettings" type="object">
+  The current settings for the specified voice.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+settings = client.voices.settings.get(voice_id="21m00Tcm4TlvDq8ikWAM")
+
+print(f"Current Settings for Voice:")
+print(f"  Stability: {settings.stability}")
+print(f"  Similarity Boost: {settings.similarity_boost}")
+print(f"  Style: {settings.style}")
+print(f"  Speed: {settings.speed}")
+print(f"  Speaker Boost: {settings.use_speaker_boost}")
+```
+
+---
+
+## Update Voice Settings
+
+Updates the settings for a specific voice.
+
+### Method Signature
+
+```python
+client.voices.settings.update(
+    voice_id: str,
+    request: VoiceSettings,
+    request_options: Optional[RequestOptions] = None
+) -> EditVoiceSettingsResponseModel
+```
+
+### Parameters
+
+<ParamField name="voice_id" type="str" required>
+  ID of the voice to be used. You can use the [Search Voices](/api-reference/voices/search) endpoint to list all available voices.
+  
+  Example: `"21m00Tcm4TlvDq8ikWAM"`
+</ParamField>
+
+<ParamField name="request" type="VoiceSettings" required>
+  VoiceSettings object containing the new settings to apply.
+</ParamField>
+
+<ParamField name="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+### Returns
+
+<ResponseField name="EditVoiceSettingsResponseModel" type="object">
+  Response confirming the settings update.
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs, VoiceSettings
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+new_settings = VoiceSettings(
+    stability=0.75,
+    similarity_boost=0.85,
+    style=0.2,
+    speed=1.0,
+    use_speaker_boost=True
+)
+
+response = client.voices.settings.update(
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    request=new_settings
+)
+
+print("Voice settings updated successfully!")
+```
+
+---
+
+## Complete Examples
+
+### Optimize Settings for Narration
+
+Configure settings for audiobook narration:
+
+```python
+from elevenlabs import ElevenLabs, VoiceSettings
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Settings optimized for clear, consistent narration
+narration_settings = VoiceSettings(
+    stability=0.85,          # High stability for consistency
+    similarity_boost=0.75,   # Good similarity to original
+    style=0.0,               # No style exaggeration
+    speed=0.95,              # Slightly slower for clarity
+    use_speaker_boost=True   # Enhanced speaker characteristics
+)
+
+client.voices.settings.update(
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    request=narration_settings
+)
+
+print("Voice optimized for narration!")
+```
+
+### Optimize Settings for Expressive Dialogue
+
+Configure settings for character dialogue:
+
+```python
+from elevenlabs import ElevenLabs, VoiceSettings
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Settings optimized for expressive, emotional speech
+dialogue_settings = VoiceSettings(
+    stability=0.45,          # Lower stability for emotion
+    similarity_boost=0.80,   # Maintain character voice
+    style=0.60,              # Moderate style exaggeration
+    speed=1.1,               # Slightly faster for energy
+    use_speaker_boost=True   # Enhanced speaker characteristics
+)
+
+client.voices.settings.update(
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    request=dialogue_settings
+)
+
+print("Voice optimized for dialogue!")
+```
+
+### Compare Settings Across Voices
+
+Retrieve and compare settings for multiple voices:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice_ids = [
+    "21m00Tcm4TlvDq8ikWAM",
+    "AZnzlk1XvdvUeBnXmlld",
+    "EXAVITQu4vr4xnSDxMaL"
+]
+
+print("Voice Settings Comparison:")
+print("-" * 60)
+
+for voice_id in voice_ids:
+    voice = client.voices.get(voice_id=voice_id)
+    settings = client.voices.settings.get(voice_id=voice_id)
+    
+    print(f"\n{voice.name} ({voice_id})")
+    print(f"  Stability: {settings.stability:.2f}")
+    print(f"  Similarity: {settings.similarity_boost:.2f}")
+    print(f"  Style: {settings.style:.2f}")
+    print(f"  Speed: {settings.speed:.2f}")
+```
+
+### Reset to Default Settings
+
+Reset a voice to default settings:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice_id = "21m00Tcm4TlvDq8ikWAM"
+
+# Get default settings
+default_settings = client.voices.settings.get_default()
+
+# Apply default settings to the voice
+client.voices.settings.update(
+    voice_id=voice_id,
+    request=default_settings
+)
+
+print(f"Voice {voice_id} reset to default settings")
+```
+
+### Async Settings Management
+
+Manage voice settings asynchronously:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs, VoiceSettings
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def main():
+    # Get current settings
+    current_settings = await client.voices.settings.get(
+        voice_id="21m00Tcm4TlvDq8ikWAM"
+    )
+    print(f"Current stability: {current_settings.stability}")
+    
+    # Update settings
+    new_settings = VoiceSettings(
+        stability=0.80,
+        similarity_boost=0.90,
+        use_speaker_boost=True
+    )
+    
+    await client.voices.settings.update(
+        voice_id="21m00Tcm4TlvDq8ikWAM",
+        request=new_settings
+    )
+    
+    print("Settings updated successfully!")
+
+asyncio.run(main())
+```
+
+## Settings Guidelines
+
+<AccordionGroup>
+  <Accordion title="Stability Recommendations">
+    - **0.3-0.5:** Highly expressive, emotional content (character voices, dramatic readings)
+    - **0.6-0.7:** Balanced, natural speech (conversations, interviews)
+    - **0.8-1.0:** Consistent, clear narration (audiobooks, professional content)
+  </Accordion>
+  
+  <Accordion title="Similarity Boost Recommendations">
+    - **0.5-0.6:** More creative interpretation of the voice
+    - **0.7-0.8:** Balanced similarity (recommended for most use cases)
+    - **0.9-1.0:** Maximum similarity to original voice (cloned voices)
+  </Accordion>
+  
+  <Accordion title="Style Recommendations">
+    - **0.0:** No style exaggeration (recommended for most cases)
+    - **0.2-0.4:** Subtle style enhancement
+    - **0.5-1.0:** Strong style exaggeration (use sparingly, increases latency)
+  </Accordion>
+  
+  <Accordion title="Speed Recommendations">
+    - **0.5-0.8:** Slower speech (better for comprehension, language learning)
+    - **0.9-1.1:** Natural speaking pace
+    - **1.2-2.0:** Faster speech (time-saving, energetic content)
+  </Accordion>
+</AccordionGroup>
+
+## Related Methods
+
+- [Search Voices](/api-reference/voices/search) - List and filter available voices
+- [Get Voice](/api-reference/voices/get) - Retrieve voice metadata
+- [Clone Voice](/api-reference/voices/clone) - Create an instant voice clone

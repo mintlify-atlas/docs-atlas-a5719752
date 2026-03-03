@@ -1,0 +1,266 @@
+---
+title: 'Get Voice'
+description: 'Retrieve metadata about a specific voice'
+icon: 'user'
+---
+
+## Overview
+
+The `voices.get()` method returns metadata about a specific voice, including its name, category, labels, samples, and other configuration details.
+
+## Method Signature
+
+```python
+client.voices.get(
+    voice_id: str,
+    with_settings: Optional[bool] = None,
+    request_options: Optional[RequestOptions] = None
+) -> Voice
+```
+
+## Parameters
+
+<ParamField name="voice_id" type="str" required>
+  ID of the voice to be used. You can use the [Search Voices](/api-reference/voices/search) endpoint to list all available voices.
+  
+  Example: `"21m00Tcm4TlvDq8ikWAM"`
+</ParamField>
+
+<ParamField name="with_settings" type="bool" optional deprecated>
+  This parameter is now deprecated. It is ignored and will be removed in a future version.
+</ParamField>
+
+<ParamField name="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+## Returns
+
+<ResponseField name="Voice" type="object">
+  Voice object containing detailed metadata about the voice.
+  
+  <Expandable title="Voice Fields">
+    <ResponseField name="voice_id" type="str" required>
+      The ID of the voice.
+    </ResponseField>
+    
+    <ResponseField name="name" type="str" optional>
+      The name of the voice.
+    </ResponseField>
+    
+    <ResponseField name="category" type="str" optional>
+      The category of the voice. Possible values:
+      - `premade` - Pre-made voice
+      - `cloned` - Cloned voice
+      - `generated` - Generated voice
+      - `professional` - Professional voice
+    </ResponseField>
+    
+    <ResponseField name="description" type="str" optional>
+      The description of the voice.
+    </ResponseField>
+    
+    <ResponseField name="labels" type="Dict[str, str]" optional>
+      Labels associated with the voice. Common keys include:
+      - `language` - The language of the voice
+      - `accent` - The accent type
+      - `gender` - The gender of the voice
+      - `age` - The age range
+    </ResponseField>
+    
+    <ResponseField name="preview_url" type="str" optional>
+      The preview URL of the voice audio sample.
+    </ResponseField>
+    
+    <ResponseField name="samples" type="List[VoiceSample]" optional>
+      List of audio samples associated with the voice. Each sample includes:
+      - `sample_id` - Unique identifier for the sample
+      - `file_name` - Original filename
+      - `mime_type` - MIME type of the audio
+      - `size_bytes` - Size in bytes
+      - `hash` - Hash of the sample
+    </ResponseField>
+    
+    <ResponseField name="settings" type="VoiceSettings" optional>
+      The current settings for the voice, including:
+      - `stability` - Voice stability (0.0 to 1.0)
+      - `similarity_boost` - Similarity enhancement (0.0 to 1.0)
+      - `style` - Style exaggeration (0.0 to 1.0)
+      - `speed` - Speech speed multiplier
+      - `use_speaker_boost` - Whether speaker boost is enabled
+    </ResponseField>
+    
+    <ResponseField name="fine_tuning" type="FineTuningResponse" optional>
+      Fine-tuning information for professional voice clones.
+    </ResponseField>
+    
+    <ResponseField name="sharing" type="VoiceSharingResponse" optional>
+      Information about voice sharing settings.
+    </ResponseField>
+    
+    <ResponseField name="high_quality_base_model_ids" type="List[str]" optional>
+      The base model IDs for high-quality voices.
+    </ResponseField>
+    
+    <ResponseField name="verified_languages" type="List[VerifiedVoiceLanguageResponseModel]" optional>
+      The verified languages for the voice.
+    </ResponseField>
+    
+    <ResponseField name="collection_ids" type="List[str]" optional>
+      The IDs of collections this voice belongs to.
+    </ResponseField>
+    
+    <ResponseField name="safety_control" type="str" optional>
+      The safety controls applied to the voice.
+    </ResponseField>
+    
+    <ResponseField name="voice_verification" type="VoiceVerificationResponse" optional>
+      Voice verification status and details.
+    </ResponseField>
+    
+    <ResponseField name="permission_on_resource" type="str" optional>
+      The permission level on this voice resource.
+    </ResponseField>
+    
+    <ResponseField name="is_owner" type="bool" optional>
+      Whether the current user is the owner of the voice.
+    </ResponseField>
+    
+    <ResponseField name="is_legacy" type="bool" optional>
+      Whether the voice is a legacy voice.
+    </ResponseField>
+    
+    <ResponseField name="is_mixed" type="bool" optional>
+      Whether the voice is a mixed voice.
+    </ResponseField>
+    
+    <ResponseField name="favorited_at_unix" type="int" optional>
+      Timestamp when the voice was marked as favorite (Unix time).
+    </ResponseField>
+    
+    <ResponseField name="created_at_unix" type="int" optional>
+      The creation time of the voice (Unix time).
+    </ResponseField>
+    
+    <ResponseField name="is_bookmarked" type="bool" optional>
+      Whether the voice is bookmarked by the current user. Only relevant for community (library-copied) voices.
+    </ResponseField>
+    
+    <ResponseField name="available_for_tiers" type="List[str]" optional>
+      The subscription tiers the voice is available for.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Examples
+
+### Basic Usage
+
+Retrieve metadata for a specific voice:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice = client.voices.get(voice_id="21m00Tcm4TlvDq8ikWAM")
+
+print(f"Voice: {voice.name}")
+print(f"Category: {voice.category}")
+print(f"Description: {voice.description}")
+```
+
+### Access Voice Labels
+
+Retrieve and display voice labels:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice = client.voices.get(voice_id="21m00Tcm4TlvDq8ikWAM")
+
+if voice.labels:
+    print("Voice Labels:")
+    for key, value in voice.labels.items():
+        print(f"  {key}: {value}")
+```
+
+### Check Voice Settings
+
+Inspect the current settings for a voice:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice = client.voices.get(voice_id="21m00Tcm4TlvDq8ikWAM")
+
+if voice.settings:
+    print("Voice Settings:")
+    print(f"  Stability: {voice.settings.stability}")
+    print(f"  Similarity Boost: {voice.settings.similarity_boost}")
+    print(f"  Style: {voice.settings.style}")
+    print(f"  Speed: {voice.settings.speed}")
+    print(f"  Speaker Boost: {voice.settings.use_speaker_boost}")
+```
+
+### List Voice Samples
+
+Retrieve information about voice samples:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice = client.voices.get(voice_id="21m00Tcm4TlvDq8ikWAM")
+
+if voice.samples:
+    print(f"Voice has {len(voice.samples)} samples:")
+    for sample in voice.samples:
+        print(f"  - {sample.file_name} ({sample.size_bytes} bytes)")
+```
+
+### Check Ownership
+
+Verify if you own a voice:
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+voice = client.voices.get(voice_id="21m00Tcm4TlvDq8ikWAM")
+
+if voice.is_owner:
+    print(f"You own the voice: {voice.name}")
+else:
+    print(f"This is a shared or default voice: {voice.name}")
+```
+
+### Async Usage
+
+Retrieve voice metadata asynchronously:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def main():
+    voice = await client.voices.get(voice_id="21m00Tcm4TlvDq8ikWAM")
+    print(f"Voice: {voice.name}")
+    print(f"Category: {voice.category}")
+
+asyncio.run(main())
+```
+
+## Related Methods
+
+- [Search Voices](/api-reference/voices/search) - List and filter available voices
+- [Clone Voice](/api-reference/voices/clone) - Create an instant voice clone
+- [Voice Settings](/api-reference/voices/settings) - Manage voice settings

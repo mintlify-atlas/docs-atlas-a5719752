@@ -1,0 +1,434 @@
+---
+title: 'Tools'
+description: 'Register custom tools with ClientTools for sync and async functions'
+---
+
+## Overview
+
+`ClientTools` allows you to register custom functions that your AI agent can call during conversations. Tools can be synchronous or asynchronous and run in a dedicated event loop to ensure non-blocking operation.
+
+## Basic Tool Registration
+
+Register a simple synchronous tool:
+
+```python
+from elevenlabs.conversational_ai.conversation import ClientTools
+
+client_tools = ClientTools()
+
+def calculate_sum(params):
+    numbers = params.get("numbers", [])
+    return sum(numbers)
+
+client_tools.register("calculate_sum", calculate_sum, is_async=False)
+```
+
+## Async Tools
+
+Register asynchronous tools for I/O operations:
+
+```python
+import asyncio
+import aiohttp
+
+async def fetch_weather(params):
+    city = params.get("city", "San Francisco")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(f"https://api.weather.com/{city}") as resp:
+            data = await resp.json()
+            return f"Weather in {city}: {data['temp']}°F"
+
+client_tools.register("fetch_weather", fetch_weather, is_async=True)
+```
+
+## Using Tools in Conversations
+
+Pass `ClientTools` to your conversation:
+
+```python
+from elevenlabs.client import ElevenLabs
+from elevenlabs.conversational_ai.conversation import Conversation, ClientTools
+from elevenlabs.conversational_ai.default_audio_interface import DefaultAudioInterface
+
+elevenlabs = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Create and register tools
+client_tools = ClientTools()
+
+def get_account_balance(params):
+    user_id = params.get("user_id")
+    # Look up account balance
+    return f"Account balance for {user_id}: $1,234.56"
+
+client_tools.register("get_account_balance", get_account_balance, is_async=False)
+
+# Use tools in conversation
+audio_interface = DefaultAudioInterface()
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    client_tools=client_tools,
+)
+
+conversation.start_session()
+```
+
+When the agent calls `get_account_balance`, the tool executes and returns the result to the agent.
+
+## Tool Parameters
+
+Tools receive a dictionary of parameters:
+
+```python
+def book_appointment(params):
+    """
+    params will contain:
+    - tool_call_id: Unique identifier for this tool call
+    - Plus any parameters sent by the agent
+    """
+    date = params.get("date")
+    time = params.get("time")
+    service = params.get("service")
+    
+    # Validate parameters
+    if not date or not time:
+        raise ValueError("Date and time are required")
+    
+    # Book the appointment
+    confirmation = f"Booked {service} on {date} at {time}"
+    return confirmation
+
+client_tools.register("book_appointment", book_appointment, is_async=False)
+```
+
+### Parameter Structure
+
+<ParamField path="tool_call_id" type="str">
+  Unique identifier for this tool invocation (automatically added)
+</ParamField>
+
+<ParamField path="...custom_params" type="any">
+  Any additional parameters sent by the agent when calling the tool
+</ParamField>
+
+## Error Handling
+
+Handle errors gracefully in your tools:
+
+```python
+def process_payment(params):
+    try:
+        amount = params.get("amount")
+        card_number = params.get("card_number")
+        
+        if amount <= 0:
+            raise ValueError("Amount must be positive")
+        
+        # Process payment logic
+        return f"Payment of ${amount} processed successfully"
+        
+    except ValueError as e:
+        # Error will be sent to the agent
+        raise ValueError(f"Invalid payment: {str(e)}")
+    except Exception as e:
+        # Log unexpected errors
+        logging.error(f"Payment processing error: {e}")
+        raise Exception("Payment processing failed. Please try again.")
+
+client_tools.register("process_payment", process_payment, is_async=False)
+```
+
+When a tool raises an exception, the error message is sent to the agent with `is_error=True`.
+
+## Custom Event Loops
+
+For advanced use cases involving context propagation or resource reuse, provide a custom asyncio event loop:
+
+```python
+import asyncio
+from elevenlabs.conversational_ai.conversation import ClientTools
+
+async def main():
+    # Get the current event loop
+    custom_loop = asyncio.get_running_loop()
+    
+    # Create ClientTools with custom loop
+    client_tools = ClientTools(loop=custom_loop)
+    
+    # Register async tool
+    async def get_user_data(params):
+        user_id = params.get("user_id")
+        # Use shared async resources (DB connections, HTTP sessions, etc.)
+        return {"user_id": user_id, "name": "John Doe"}
+    
+    client_tools.register("get_user_data", get_user_data, is_async=True)
+    
+    # Use with conversation
+    conversation = Conversation(
+        client=elevenlabs,
+        agent_id="your-agent-id",
+        requires_auth=True,
+        audio_interface=audio_interface,
+        client_tools=client_tools,
+    )
+    
+    await conversation.start_session()
+    # ... rest of conversation logic
+
+asyncio.run(main())
+```
+
+### Custom Loop Parameters
+
+<ParamField path="loop" type="asyncio.AbstractEventLoop">
+  Custom event loop to use for tool execution. If not provided, a new loop is created in a separate thread.
+</ParamField>
+
+### Benefits of Custom Event Loops
+
+<CardGroup cols={2}>
+  <Card title="Context Propagation" icon="link">
+    Maintain request-scoped state across async operations
+  </Card>
+  <Card title="Resource Reuse" icon="recycle">
+    Share async resources like HTTP sessions or database pools
+  </Card>
+  <Card title="Loop Management" icon="gears">
+    Prevent "different event loop" runtime errors
+  </Card>
+  <Card title="Performance" icon="bolt">
+    Better control over async task scheduling and execution
+  </Card>
+</CardGroup>
+
+<Warning>
+  When using a custom loop, you're responsible for its lifecycle. Don't close the loop while ClientTools are still using it.
+</Warning>
+
+## Complex Tool Example
+
+Here's a complete example with database access and error handling:
+
+```python
+import asyncio
+import aiosqlite
+from elevenlabs.conversational_ai.conversation import ClientTools
+
+class DatabaseTools:
+    def __init__(self, db_path: str):
+        self.db_path = db_path
+        self.client_tools = ClientTools()
+        self._register_tools()
+    
+    def _register_tools(self):
+        self.client_tools.register(
+            "get_order_status",
+            self.get_order_status,
+            is_async=True
+        )
+        self.client_tools.register(
+            "update_order_status",
+            self.update_order_status,
+            is_async=True
+        )
+    
+    async def get_order_status(self, params):
+        order_id = params.get("order_id")
+        
+        if not order_id:
+            raise ValueError("order_id is required")
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute(
+                "SELECT status, estimated_delivery FROM orders WHERE id = ?",
+                (order_id,)
+            )
+            row = await cursor.fetchone()
+            
+            if not row:
+                return f"Order {order_id} not found"
+            
+            status, delivery = row
+            return f"Order {order_id} is {status}. Estimated delivery: {delivery}"
+    
+    async def update_order_status(self, params):
+        order_id = params.get("order_id")
+        new_status = params.get("status")
+        
+        if not order_id or not new_status:
+            raise ValueError("order_id and status are required")
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute(
+                "UPDATE orders SET status = ? WHERE id = ?",
+                (new_status, order_id)
+            )
+            await db.commit()
+            return f"Order {order_id} updated to {new_status}"
+
+# Usage
+db_tools = DatabaseTools("orders.db")
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    client_tools=db_tools.client_tools,
+)
+```
+
+## Tool Registration Reference
+
+### `register()`
+
+<ParamField path="tool_name" type="str" required>
+  Unique identifier for the tool. Must match the tool name configured in the agent.
+</ParamField>
+
+<ParamField path="handler" type="Callable" required>
+  Function that implements the tool logic. Can be sync or async.
+</ParamField>
+
+<ParamField path="is_async" type="bool" required>
+  Whether the handler is an async function
+</ParamField>
+
+### Lifecycle Methods
+
+<ResponseField name="start" type="method">
+  Starts the event loop for tool execution. Called automatically when the conversation starts.
+  
+  ```python
+  client_tools.start()
+  ```
+</ResponseField>
+
+<ResponseField name="stop" type="method">
+  Stops the event loop and cleans up resources. Called automatically when the conversation ends.
+  
+  ```python
+  client_tools.stop()
+  ```
+</ResponseField>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use async for I/O operations">
+    Always use async tools for network requests, database queries, or file I/O to avoid blocking the main conversation thread.
+    
+    ```python
+    async def fetch_data(params):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as resp:
+                return await resp.json()
+    ```
+  </Accordion>
+  
+  <Accordion title="Validate parameters">
+    Always validate tool parameters before processing to provide clear error messages.
+    
+    ```python
+    def my_tool(params):
+        required = ["param1", "param2"]
+        for param in required:
+            if param not in params:
+                raise ValueError(f"{param} is required")
+    ```
+  </Accordion>
+  
+  <Accordion title="Return user-friendly messages">
+    Tool return values are sent to the agent, so make them clear and actionable.
+    
+    ```python
+    # Good
+    return "Appointment booked for March 15 at 2:00 PM"
+    
+    # Less helpful
+    return {"success": True, "id": 12345}
+    ```
+  </Accordion>
+  
+  <Accordion title="Handle errors gracefully">
+    Catch and handle errors to provide meaningful feedback to users.
+    
+    ```python
+    try:
+        result = process_request(params)
+        return result
+    except ValueError as e:
+        raise ValueError(f"Invalid input: {e}")
+    except Exception as e:
+        logging.error(f"Unexpected error: {e}")
+        raise Exception("Something went wrong. Please try again.")
+    ```
+  </Accordion>
+  
+  <Accordion title="Keep tools focused">
+    Each tool should do one thing well. Break complex operations into multiple tools.
+    
+    ```python
+    # Good: Separate tools
+    client_tools.register("get_order", get_order, is_async=True)
+    client_tools.register("update_order", update_order, is_async=True)
+    client_tools.register("cancel_order", cancel_order, is_async=True)
+    
+    # Less ideal: One tool doing everything
+    client_tools.register("manage_order", manage_order, is_async=True)
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Complete Example
+
+```python
+import asyncio
+import aiohttp
+from elevenlabs.client import ElevenLabs
+from elevenlabs.conversational_ai.conversation import (
+    Conversation,
+    ClientTools,
+)
+from elevenlabs.conversational_ai.default_audio_interface import DefaultAudioInterface
+
+elevenlabs = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Create tools
+client_tools = ClientTools()
+
+# Sync tool
+def calculate_sum(params):
+    numbers = params.get("numbers", [])
+    return sum(numbers)
+
+# Async tool
+async def fetch_data(params):
+    url = params.get("url")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            data = await resp.json()
+            return data
+
+# Register tools
+client_tools.register("calculate_sum", calculate_sum, is_async=False)
+client_tools.register("fetch_data", fetch_data, is_async=True)
+
+# Create conversation with tools
+audio_interface = DefaultAudioInterface()
+
+conversation = Conversation(
+    client=elevenlabs,
+    agent_id="your-agent-id",
+    requires_auth=True,
+    audio_interface=audio_interface,
+    client_tools=client_tools,
+)
+
+conversation.start_session()
+input("Press Enter to end...")
+conversation.end_session()
+```

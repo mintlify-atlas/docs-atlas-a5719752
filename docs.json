@@ -1,122 +1,134 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "ElevenLabs Python SDK",
+  "theme": "palm",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6366f1",
+    "light": "#818cf8",
+    "dark": "#4f46e5"
   },
-  "favicon": "/favicon.svg",
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/elevenlabs/elevenlabs-python"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/elevenlabs/elevenlabs-python"
+    }
+  },
   "navigation": {
     "tabs": [
       {
-        "tab": "Guides",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Getting started",
+            "group": "Getting Started",
             "pages": [
-              "index",
+              "introduction",
+              "installation",
               "quickstart",
-              "development"
+              "authentication"
             ]
           },
           {
-            "group": "Customization",
+            "group": "Core Features",
             "pages": [
-              "essentials/settings",
-              "essentials/navigation"
+              "text-to-speech",
+              "streaming",
+              "voices",
+              "models"
             ]
           },
           {
-            "group": "Writing content",
+            "group": "Conversational AI",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "conversational-ai/overview",
+              "conversational-ai/agents",
+              "conversational-ai/conversations",
+              "conversational-ai/tools",
+              "conversational-ai/audio-interface"
             ]
           },
           {
-            "group": "AI tools",
+            "group": "Advanced Features",
             "pages": [
-              "ai-tools/cursor",
-              "ai-tools/claude-code",
-              "ai-tools/windsurf"
+              "advanced/voice-cloning",
+              "advanced/speech-to-speech",
+              "advanced/speech-to-text",
+              "advanced/dubbing",
+              "advanced/audio-isolation",
+              "advanced/audio-native",
+              "advanced/music-generation"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/async-client",
+              "guides/error-handling",
+              "guides/pronunciation-dictionaries",
+              "guides/webhooks"
             ]
           }
         ]
       },
       {
-        "tab": "API reference",
+        "tab": "API Reference",
         "groups": [
           {
-            "group": "API documentation",
+            "group": "Client",
             "pages": [
-              "api-reference/introduction"
+              "api-reference/client",
+              "api-reference/async-client"
             ]
           },
           {
-            "group": "Endpoint examples",
+            "group": "Text to Speech",
             "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
+              "api-reference/text-to-speech/convert",
+              "api-reference/text-to-speech/stream",
+              "api-reference/text-to-speech/realtime"
+            ]
+          },
+          {
+            "group": "Voices",
+            "pages": [
+              "api-reference/voices/search",
+              "api-reference/voices/get",
+              "api-reference/voices/clone",
+              "api-reference/voices/settings"
+            ]
+          },
+          {
+            "group": "Conversational AI",
+            "pages": [
+              "api-reference/conversational-ai/conversation",
+              "api-reference/conversational-ai/agents",
+              "api-reference/conversational-ai/client-tools",
+              "api-reference/conversational-ai/audio-interface"
+            ]
+          },
+          {
+            "group": "Audio Processing",
+            "pages": [
+              "api-reference/audio/speech-to-speech",
+              "api-reference/audio/speech-to-text",
+              "api-reference/audio/dubbing",
+              "api-reference/audio/isolation",
+              "api-reference/audio/music"
+            ]
+          },
+          {
+            "group": "History & Models",
+            "pages": [
+              "api-reference/history",
+              "api-reference/models"
             ]
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
-  },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+    ]
   }
 }

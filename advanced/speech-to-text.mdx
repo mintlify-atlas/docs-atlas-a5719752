@@ -1,0 +1,300 @@
+---
+title: "Speech to Text"
+description: "Transcribe audio to text with real-time and batch processing capabilities"
+---
+
+## Overview
+
+The Speech-to-Text feature provides powerful transcription capabilities with both real-time WebSocket connections and batch processing options.
+
+## Realtime Transcription
+
+The realtime API uses WebSocket connections for live audio transcription.
+
+### URL-Based Streaming
+
+Transcribe audio from a URL in real-time:
+
+```python
+from elevenlabs.client import ElevenLabs
+from elevenlabs import RealtimeEvents
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Connect to a streaming URL
+connection = await client.speech_to_text.realtime.connect({
+    "url": "https://stream.example.com/audio.mp3"
+})
+
+# Listen for transcript events
+connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, lambda data: print(f"Partial: {data}"))
+connection.on(RealtimeEvents.FINAL_TRANSCRIPT, lambda data: print(f"Final: {data}"))
+```
+
+### Manual Audio Chunks
+
+Send audio chunks manually for transcription:
+
+```python
+from elevenlabs.client import ElevenLabs
+from elevenlabs import AudioFormat, RealtimeEvents
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Connect with audio format specification
+connection = await client.speech_to_text.realtime.connect({
+    "audio_format": AudioFormat.PCM_16000,
+    "sample_rate": 16000
+})
+
+# Handle transcription events
+def on_transcript(data):
+    print(f"Transcript: {data}")
+
+connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, on_transcript)
+
+# Send audio chunks
+with open("audio.pcm", "rb") as f:
+    while chunk := f.read(4096):
+        connection.send_audio(chunk)
+```
+
+## Event Types
+
+Available events from the realtime API:
+
+<ParamField path="PARTIAL_TRANSCRIPT" type="event">
+  Emitted when a partial (interim) transcript is available.
+</ParamField>
+
+<ParamField path="FINAL_TRANSCRIPT" type="event">
+  Emitted when a final (complete) transcript segment is available.
+</ParamField>
+
+<ParamField path="ERROR" type="event">
+  Emitted when an error occurs during transcription.
+</ParamField>
+
+<ParamField path="CONNECTED" type="event">
+  Emitted when the WebSocket connection is established.
+</ParamField>
+
+<ParamField path="DISCONNECTED" type="event">
+  Emitted when the WebSocket connection is closed.
+</ParamField>
+
+## Audio Formats
+
+Supported audio formats for realtime transcription:
+
+```python
+from elevenlabs import AudioFormat
+
+# Available formats:
+# AudioFormat.PCM_16000 - 16-bit PCM at 16kHz
+# AudioFormat.PCM_22050 - 16-bit PCM at 22.05kHz
+# AudioFormat.PCM_24000 - 16-bit PCM at 24kHz
+# AudioFormat.PCM_44100 - 16-bit PCM at 44.1kHz
+```
+
+## Complete Example
+
+Full example with error handling:
+
+```python
+import asyncio
+from elevenlabs.client import ElevenLabs
+from elevenlabs import RealtimeEvents, AudioFormat
+
+async def transcribe_audio():
+    client = ElevenLabs(api_key="YOUR_API_KEY")
+    
+    try:
+        # Connect to the realtime API
+        connection = await client.speech_to_text.realtime.connect({
+            "audio_format": AudioFormat.PCM_16000,
+            "sample_rate": 16000
+        })
+        
+        # Event handlers
+        def on_partial(data):
+            print(f"[Partial] {data}")
+        
+        def on_final(data):
+            print(f"[Final] {data}")
+        
+        def on_error(error):
+            print(f"[Error] {error}")
+        
+        def on_connected():
+            print("Connected to transcription service")
+        
+        def on_disconnected():
+            print("Disconnected from transcription service")
+        
+        # Register event listeners
+        connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, on_partial)
+        connection.on(RealtimeEvents.FINAL_TRANSCRIPT, on_final)
+        connection.on(RealtimeEvents.ERROR, on_error)
+        connection.on(RealtimeEvents.CONNECTED, on_connected)
+        connection.on(RealtimeEvents.DISCONNECTED, on_disconnected)
+        
+        # Send audio data
+        with open("audio.pcm", "rb") as audio_file:
+            while chunk := audio_file.read(4096):
+                connection.send_audio(chunk)
+                await asyncio.sleep(0.01)  # Simulate real-time
+        
+        # Close the connection
+        connection.close()
+        
+    except Exception as e:
+        print(f"Transcription error: {e}")
+
+asyncio.run(transcribe_audio())
+```
+
+## Microphone Input
+
+Transcribe from microphone in real-time:
+
+```python
+import asyncio
+import pyaudio
+from elevenlabs.client import ElevenLabs
+from elevenlabs import RealtimeEvents, AudioFormat
+
+async def transcribe_microphone():
+    client = ElevenLabs(api_key="YOUR_API_KEY")
+    
+    connection = await client.speech_to_text.realtime.connect({
+        "audio_format": AudioFormat.PCM_16000,
+        "sample_rate": 16000
+    })
+    
+    # Display transcripts
+    connection.on(RealtimeEvents.PARTIAL_TRANSCRIPT, 
+                  lambda data: print(f"\r{data}", end=""))
+    connection.on(RealtimeEvents.FINAL_TRANSCRIPT, 
+                  lambda data: print(f"\n[FINAL] {data}"))
+    
+    # Set up audio input
+    audio = pyaudio.PyAudio()
+    stream = audio.open(
+        format=pyaudio.paInt16,
+        channels=1,
+        rate=16000,
+        input=True,
+        frames_per_buffer=1024
+    )
+    
+    print("Listening... (Press Ctrl+C to stop)")
+    
+    try:
+        while True:
+            chunk = stream.read(1024)
+            connection.send_audio(chunk)
+            await asyncio.sleep(0.01)
+    except KeyboardInterrupt:
+        print("\nStopping...")
+    finally:
+        stream.stop_stream()
+        stream.close()
+        audio.terminate()
+        connection.close()
+
+asyncio.run(transcribe_microphone())
+```
+
+## File Transcription
+
+Transcribe a complete audio file:
+
+```python
+import asyncio
+from elevenlabs.client import ElevenLabs
+from elevenlabs import RealtimeEvents
+
+async def transcribe_file(filepath: str):
+    client = ElevenLabs(api_key="YOUR_API_KEY")
+    
+    connection = await client.speech_to_text.realtime.connect({
+        "url": filepath
+    })
+    
+    transcripts = []
+    
+    def on_final(data):
+        transcripts.append(data)
+        print(f"Received: {data}")
+    
+    connection.on(RealtimeEvents.FINAL_TRANSCRIPT, on_final)
+    
+    # Wait for transcription to complete
+    await connection.wait_for_completion()
+    
+    full_transcript = " ".join(transcripts)
+    return full_transcript
+
+transcript = asyncio.run(transcribe_file("meeting_recording.mp3"))
+print(f"\nFull transcript:\n{transcript}")
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Live Captioning" icon="closed-captioning">
+    Real-time captions for videos and streams
+  </Card>
+  <Card title="Voice Commands" icon="microphone">
+    Transcribe voice commands for applications
+  </Card>
+  <Card title="Meeting Transcription" icon="users">
+    Transcribe meetings and calls in real-time
+  </Card>
+  <Card title="Accessibility" icon="universal-access">
+    Provide text alternatives for audio content
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Tip>
+  - Use appropriate audio formats for your use case
+  - Handle both partial and final transcripts for better UX
+  - Implement error handling for network issues
+  - Close connections properly when done
+  - Use lower sample rates (16kHz) for speech-only content
+</Tip>
+
+<Info>
+  Partial transcripts provide interim results that may change as more audio is processed. Final transcripts are stable and won't change.
+</Info>
+
+## Async Client
+
+The async client provides the same functionality:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+from elevenlabs import RealtimeEvents
+
+async def main():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    connection = await client.speech_to_text.realtime.connect({
+        "url": "https://stream.example.com/audio.mp3"
+    })
+    
+    connection.on(RealtimeEvents.FINAL_TRANSCRIPT, 
+                  lambda data: print(data))
+
+asyncio.run(main())
+```
+
+## Related Features
+
+- [Speech to Speech](/advanced/speech-to-speech) - Convert speech to different voices
+- [Audio Isolation](/advanced/audio-isolation) - Clean audio before transcription
+- [Dubbing](/advanced/dubbing) - Combine transcription with translation

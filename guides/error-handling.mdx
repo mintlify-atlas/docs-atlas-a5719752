@@ -1,0 +1,340 @@
+---
+title: "Error Handling"
+description: "Best practices for handling errors and exceptions in the ElevenLabs SDK"
+---
+
+## Overview
+
+The ElevenLabs Python SDK provides a comprehensive set of exception types that map to HTTP status codes. Proper error handling ensures your application can gracefully handle API errors and provide meaningful feedback to users.
+
+## Exception Types
+
+The SDK includes the following exception types, all inheriting from `ApiError`:
+
+### BadRequestError (400)
+
+Raised when the request is malformed or contains invalid parameters.
+
+```python
+from elevenlabs import ElevenLabs, BadRequestError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    audio = client.text_to_speech.convert(
+        text="",  # Empty text
+        voice_id="invalid-id",
+        model_id="eleven_multilingual_v2"
+    )
+except BadRequestError as e:
+    print(f"Bad request: {e.body}")
+    print(f"Status code: {e.status_code}")  # 400
+```
+
+### UnauthorizedError (401)
+
+Raised when the API key is missing or invalid.
+
+```python
+from elevenlabs import ElevenLabs, UnauthorizedError
+
+try:
+    client = ElevenLabs(api_key="invalid_key")
+    voices = client.voices.search()
+except UnauthorizedError as e:
+    print("Invalid API key. Please check your credentials.")
+    print(f"Status code: {e.status_code}")  # 401
+```
+
+### ForbiddenError (403)
+
+Raised when the API key is valid but doesn't have permission to access the resource.
+
+```python
+from elevenlabs import ElevenLabs, ForbiddenError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    # Attempting to access a premium feature without subscription
+    result = client.some_premium_feature()
+except ForbiddenError as e:
+    print("Access denied. Upgrade your plan to use this feature.")
+    print(f"Status code: {e.status_code}")  # 403
+```
+
+### NotFoundError (404)
+
+Raised when the requested resource doesn't exist.
+
+```python
+from elevenlabs import ElevenLabs, NotFoundError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    dictionary = client.pronunciation_dictionaries.get(
+        pronunciation_dictionary_id="nonexistent_id"
+    )
+except NotFoundError as e:
+    print("Pronunciation dictionary not found.")
+    print(f"Status code: {e.status_code}")  # 404
+```
+
+### TooEarlyError (425)
+
+Raised when a request is made too early, typically when a resource is not yet ready.
+
+```python
+from elevenlabs import ElevenLabs, TooEarlyError
+import time
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    result = client.some_resource.get(resource_id="id")
+except TooEarlyError as e:
+    print("Resource not ready yet. Retrying...")
+    time.sleep(5)
+    # Retry logic here
+```
+
+### ConflictError (409)
+
+Raised when there's a conflict with the current state of the resource.
+
+```python
+from elevenlabs import ElevenLabs, ConflictError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    # Attempting to create a resource that already exists
+    voice = client.voices.ivc.create(
+        name="Existing Voice Name",
+        files=["sample.mp3"]
+    )
+except ConflictError as e:
+    print("A voice with this name already exists.")
+    print(f"Status code: {e.status_code}")  # 409
+```
+
+### UnprocessableEntityError (422)
+
+Raised when the request is well-formed but contains semantic errors.
+
+```python
+from elevenlabs import ElevenLabs, UnprocessableEntityError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    audio = client.text_to_speech.convert(
+        text="Test",
+        voice_id="valid_id",
+        model_id="invalid_model"  # Valid format but doesn't exist
+    )
+except UnprocessableEntityError as e:
+    print("The model ID is not valid or not available.")
+    print(f"Status code: {e.status_code}")  # 422
+```
+
+## Comprehensive Error Handling
+
+### Basic Pattern
+
+Handle all possible errors in a single try-except block:
+
+```python
+from elevenlabs import (
+    ElevenLabs,
+    BadRequestError,
+    UnauthorizedError,
+    ForbiddenError,
+    NotFoundError,
+    UnprocessableEntityError,
+    ConflictError,
+    TooEarlyError
+)
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    audio = client.text_to_speech.convert(
+        text="Hello world",
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        model_id="eleven_multilingual_v2"
+    )
+    with open("output.mp3", "wb") as f:
+        f.write(audio)
+except BadRequestError as e:
+    print(f"Invalid request parameters: {e.body}")
+except UnauthorizedError:
+    print("Authentication failed. Check your API key.")
+except ForbiddenError:
+    print("You don't have permission to access this resource.")
+except NotFoundError:
+    print("The requested resource was not found.")
+except UnprocessableEntityError as e:
+    print(f"Request validation failed: {e.body}")
+except Exception as e:
+    print(f"An unexpected error occurred: {e}")
+```
+
+### Async Error Handling
+
+Error handling works the same way with the async client:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs, BadRequestError, UnauthorizedError
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def generate_speech():
+    try:
+        audio = await client.text_to_speech.convert(
+            text="Hello world",
+            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            model_id="eleven_multilingual_v2"
+        )
+        return audio
+    except BadRequestError as e:
+        print(f"Bad request: {e.body}")
+        raise
+    except UnauthorizedError:
+        print("Authentication failed")
+        raise
+
+asyncio.run(generate_speech())
+```
+
+## Retry Logic
+
+Implement retry logic for transient errors:
+
+```python
+import time
+from elevenlabs import ElevenLabs, TooEarlyError
+
+def generate_with_retry(client, max_retries=3, delay=2):
+    for attempt in range(max_retries):
+        try:
+            audio = client.text_to_speech.convert(
+                text="Hello world",
+                voice_id="JBFqnCBsd6RMkjVDRZzb",
+                model_id="eleven_multilingual_v2"
+            )
+            return audio
+        except TooEarlyError:
+            if attempt < max_retries - 1:
+                print(f"Attempt {attempt + 1} failed. Retrying in {delay}s...")
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+            else:
+                print("Max retries reached")
+                raise
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+audio = generate_with_retry(client)
+```
+
+## Error Information
+
+All error objects provide useful debugging information:
+
+<ParamField path="status_code" type="int">
+  The HTTP status code of the error.
+</ParamField>
+
+<ParamField path="body" type="Any">
+  The response body containing error details. For `BadRequestError`, this is a `BadRequestErrorBody` object with an `error` field.
+</ParamField>
+
+<ParamField path="headers" type="Dict[str, str]">
+  The response headers, if any.
+</ParamField>
+
+### Accessing Error Details
+
+```python
+from elevenlabs import ElevenLabs, BadRequestError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    audio = client.text_to_speech.convert(
+        text="",
+        voice_id="invalid",
+        model_id="eleven_multilingual_v2"
+    )
+except BadRequestError as e:
+    print(f"Status Code: {e.status_code}")
+    print(f"Error Message: {e.body.error}")
+    if e.headers:
+        print(f"Response Headers: {e.headers}")
+```
+
+## Webhook Error Handling
+
+Webhook signature verification can also raise errors:
+
+```python
+from elevenlabs import ElevenLabs, BadRequestError
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    event = client.webhooks.construct_event(
+        rawBody=request_body,
+        sig_header=signature_header,
+        secret="your_webhook_secret"
+    )
+except BadRequestError as e:
+    # Invalid signature or timestamp
+    print(f"Webhook verification failed: {e.body.error}")
+    # Return 400 to the webhook sender
+    return {"error": "Invalid signature"}, 400
+```
+
+Common webhook errors:
+- `"Missing signature header"` - The signature header was not provided
+- `"Webhook secret not configured"` - No secret was provided
+- `"No signature hash found with expected scheme v0"` - Invalid signature format
+- `"Timestamp outside the tolerance zone"` - Webhook is too old (>30 minutes)
+- `"Signature hash does not match"` - Signature verification failed
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Always validate input" icon="check">
+    Validate parameters before making API calls to avoid `BadRequestError`.
+  </Card>
+  
+  <Card title="Use specific exceptions" icon="filter">
+    Catch specific exception types rather than generic `Exception` when possible.
+  </Card>
+  
+  <Card title="Log error details" icon="file-lines">
+    Always log the full error information for debugging.
+  </Card>
+  
+  <Card title="Implement retry logic" icon="rotate">
+    For transient errors like `TooEarlyError`, implement exponential backoff.
+  </Card>
+</CardGroup>
+
+<Warning>
+  Never expose raw API errors to end users. Always catch exceptions and provide user-friendly error messages.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Async Client" icon="rotate" href="/guides/async-client">
+    Learn about async error handling patterns
+  </Card>
+  <Card title="Webhooks" icon="webhook" href="/guides/webhooks">
+    Understand webhook-specific error handling
+  </Card>
+</CardGroup>

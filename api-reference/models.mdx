@@ -1,0 +1,158 @@
+---
+title: "Models"
+description: "List available AI models"
+---
+
+The Models client provides methods to retrieve information about available AI models.
+
+## list
+
+Gets a list of available models.
+
+```python
+client.models.list()
+```
+
+### Parameters
+
+<ParamField path="request_options" type="RequestOptions" optional>
+  Request-specific configuration.
+</ParamField>
+
+### Response
+
+<ResponseField name="models" type="List[Model]">
+  Returns a list of available AI models.
+  
+  <ResponseField name="model_id" type="str">
+    The unique identifier for the model.
+  </ResponseField>
+  
+  <ResponseField name="name" type="str">
+    The name of the model.
+  </ResponseField>
+  
+  <ResponseField name="description" type="str">
+    A description of the model and its capabilities.
+  </ResponseField>
+  
+  <ResponseField name="can_be_finetuned" type="bool">
+    Whether the model can be fine-tuned.
+  </ResponseField>
+  
+  <ResponseField name="can_do_text_to_speech" type="bool">
+    Whether the model supports text-to-speech.
+  </ResponseField>
+  
+  <ResponseField name="can_do_voice_conversion" type="bool">
+    Whether the model supports voice conversion.
+  </ResponseField>
+  
+  <ResponseField name="languages" type="List[str]">
+    List of supported languages.
+  </ResponseField>
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Get all available models
+models = client.models.list()
+
+# Iterate through models
+for model in models:
+    print(f"Model: {model.name}")
+    print(f"ID: {model.model_id}")
+    print(f"Description: {model.description}")
+    print(f"Can do TTS: {model.can_do_text_to_speech}")
+    print(f"Languages: {', '.join(model.languages)}")
+    print("---")
+```
+
+### Usage with Text-to-Speech
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Get available models
+models = client.models.list()
+
+# Find a specific model
+multilingual_model = next(
+    (m for m in models if "multilingual" in m.name.lower()),
+    None
+)
+
+if multilingual_model:
+    # Use the model for text-to-speech
+    audio = client.text_to_speech.convert(
+        voice_id="voice_id",
+        text="Hello, world!",
+        model_id=multilingual_model.model_id
+    )
+```
+
+---
+
+## Async Methods
+
+The list method is also available as an async method using `AsyncElevenLabs` client:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def main():
+    # Get all available models
+    models = await client.models.list()
+    
+    # Process models
+    for model in models:
+        print(f"Model: {model.name} (ID: {model.model_id})")
+
+asyncio.run(main())
+```
+
+### Example: Filter Models by Capability
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def main():
+    models = await client.models.list()
+    
+    # Filter models that support text-to-speech
+    tts_models = [
+        model for model in models 
+        if model.can_do_text_to_speech
+    ]
+    
+    # Filter models that can be fine-tuned
+    finetune_models = [
+        model for model in models 
+        if model.can_be_finetuned
+    ]
+    
+    # Filter models that support voice conversion
+    voice_conversion_models = [
+        model for model in models 
+        if model.can_do_voice_conversion
+    ]
+    
+    print(f"TTS Models: {len(tts_models)}")
+    print(f"Fine-tunable Models: {len(finetune_models)}")
+    print(f"Voice Conversion Models: {len(voice_conversion_models)}")
+
+asyncio.run(main())
+```

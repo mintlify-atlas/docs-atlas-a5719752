@@ -1,0 +1,303 @@
+---
+title: 'Agents'
+description: 'Create and manage AI agents with the ElevenLabs Conversational AI API'
+---
+
+## Overview
+
+Agents are the core of ElevenLabs Conversational AI. Each agent has a unique configuration that defines its behavior, voice, conversation style, and capabilities.
+
+## Creating an Agent
+
+Create a new agent with a conversation configuration:
+
+```python
+from elevenlabs import ElevenLabs, ConversationalConfig
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+
+response = client.conversational_ai.agents.create(
+    conversation_config=ConversationalConfig(
+        # Configure your agent's behavior
+    ),
+    name="My Customer Support Agent",
+    tags=["customer-support", "production"],
+)
+
+agent_id = response.agent_id
+print(f"Created agent: {agent_id}")
+```
+
+### Configuration Options
+
+<ParamField path="conversation_config" type="ConversationalConfig" required>
+  Conversation configuration defining the agent's behavior and personality
+</ParamField>
+
+<ParamField path="name" type="str">
+  A human-readable name to make the agent easier to find
+</ParamField>
+
+<ParamField path="tags" type="List[str]">
+  Tags to help classify and filter the agent
+</ParamField>
+
+<ParamField path="platform_settings" type="AgentPlatformSettingsRequestModel">
+  Platform settings for the agent (non-conversation related settings)
+</ParamField>
+
+<ParamField path="workflow" type="AgentWorkflowRequestModel">
+  Workflow defining the conversation flow and tool interactions
+</ParamField>
+
+## Retrieving an Agent
+
+Get an agent's configuration by ID:
+
+```python
+agent = client.conversational_ai.agents.get(
+    agent_id="agent_3701k3ttaq12ewp8b7qv5rfyszkz",
+    version_id="version_id",  # Optional
+    branch_id="branch_id",    # Optional
+)
+
+print(f"Agent name: {agent.name}")
+print(f"Agent config: {agent.conversation_config}")
+```
+
+### Parameters
+
+<ParamField path="agent_id" type="str" required>
+  The unique identifier of the agent
+</ParamField>
+
+<ParamField path="version_id" type="str">
+  The ID of a specific agent version to retrieve
+</ParamField>
+
+<ParamField path="branch_id" type="str">
+  The ID of a specific branch to retrieve
+</ParamField>
+
+## Listing Agents
+
+Retrieve a paginated list of your agents:
+
+```python
+response = client.conversational_ai.agents.list(
+    page_size=30,
+    search="customer",
+    archived=False,
+    show_only_owned_agents=True,
+    sort_direction="desc",
+    sort_by="created_at",
+)
+
+for agent in response.agents:
+    print(f"{agent.agent_id}: {agent.name}")
+
+# Pagination
+if response.has_more:
+    next_page = client.conversational_ai.agents.list(
+        cursor=response.next_cursor
+    )
+```
+
+### List Parameters
+
+<ParamField path="page_size" type="int" default="30">
+  Number of agents to return (max 100)
+</ParamField>
+
+<ParamField path="search" type="str">
+  Search agents by name
+</ParamField>
+
+<ParamField path="archived" type="bool">
+  Filter by archived status
+</ParamField>
+
+<ParamField path="show_only_owned_agents" type="bool">
+  If true, excludes agents shared with you by others
+</ParamField>
+
+<ParamField path="sort_direction" type="str">
+  Sort direction: `"asc"` or `"desc"`
+</ParamField>
+
+<ParamField path="sort_by" type="str">
+  Field to sort by (e.g., `"name"`, `"created_at"`)
+</ParamField>
+
+<ParamField path="cursor" type="str">
+  Pagination cursor from previous response
+</ParamField>
+
+## Updating an Agent
+
+Update an existing agent's configuration:
+
+```python
+updated_agent = client.conversational_ai.agents.update(
+    agent_id="agent_3701k3ttaq12ewp8b7qv5rfyszkz",
+    name="Updated Customer Support Agent",
+    conversation_config=ConversationalConfig(
+        # Updated configuration
+    ),
+    version_description="Improved response handling",
+)
+```
+
+### Update Parameters
+
+<ParamField path="agent_id" type="str" required>
+  The ID of the agent to update
+</ParamField>
+
+<ParamField path="branch_id" type="str">
+  The ID of the branch to update
+</ParamField>
+
+<ParamField path="name" type="str">
+  Updated name for the agent
+</ParamField>
+
+<ParamField path="conversation_config" type="ConversationalConfig">
+  Updated conversation configuration
+</ParamField>
+
+<ParamField path="version_description" type="str">
+  Description for this version (for versioned agents)
+</ParamField>
+
+## Duplicating an Agent
+
+Create a copy of an existing agent:
+
+```python
+new_agent = client.conversational_ai.agents.duplicate(
+    agent_id="agent_3701k3ttaq12ewp8b7qv5rfyszkz",
+    name="Customer Support Agent (Copy)",
+)
+
+print(f"Duplicated agent: {new_agent.agent_id}")
+```
+
+## Deleting an Agent
+
+Permanently delete an agent:
+
+```python
+client.conversational_ai.agents.delete(
+    agent_id="agent_3701k3ttaq12ewp8b7qv5rfyszkz"
+)
+```
+
+<Warning>
+  Deleting an agent is permanent and cannot be undone. All associated data will be removed.
+</Warning>
+
+## Testing Agents
+
+### Simulate Conversation
+
+Test your agent with a simulated conversation:
+
+```python
+from elevenlabs import (
+    ConversationSimulationSpecification,
+    AgentConfig,
+)
+
+result = client.conversational_ai.agents.simulate_conversation(
+    agent_id="agent_3701k3ttaq12ewp8b7qv5rfyszkz",
+    simulation_specification=ConversationSimulationSpecification(
+        simulated_user_config=AgentConfig(
+            first_message="Hello, I need help with my order",
+            language="en",
+        ),
+    ),
+    new_turns_limit=10,
+)
+
+print(f"Conversation turns: {len(result.conversation_turns)}")
+for turn in result.conversation_turns:
+    print(f"{turn.role}: {turn.message}")
+```
+
+### Run Test Suite
+
+Run predefined tests on your agent:
+
+```python
+from elevenlabs import SingleTestRunRequestModel
+
+result = client.conversational_ai.agents.run_tests(
+    agent_id="agent_3701k3ttaq12ewp8b7qv5rfyszkz",
+    tests=[
+        SingleTestRunRequestModel(
+            test_id="test_greeting",
+        ),
+        SingleTestRunRequestModel(
+            test_id="test_order_lookup",
+        ),
+    ],
+)
+
+print(f"Test results: {result.status}")
+```
+
+## Async Usage
+
+All agent operations support async/await:
+
+```python
+import asyncio
+from elevenlabs import AsyncElevenLabs, ConversationalConfig
+
+client = AsyncElevenLabs(
+    api_key="YOUR_API_KEY",
+)
+
+async def main():
+    # Create agent
+    response = await client.conversational_ai.agents.create(
+        conversation_config=ConversationalConfig(),
+        name="Async Agent",
+    )
+    
+    # List agents
+    agents = await client.conversational_ai.agents.list()
+    
+    # Update agent
+    updated = await client.conversational_ai.agents.update(
+        agent_id=response.agent_id,
+        name="Updated Async Agent",
+    )
+    
+    # Delete agent
+    await client.conversational_ai.agents.delete(
+        agent_id=response.agent_id
+    )
+
+asyncio.run(main())
+```
+
+## Agent Subresources
+
+Agents have several subresources for managing additional functionality:
+
+- **Summaries**: Access conversation summaries and analytics
+- **Widget**: Configure embeddable chat widgets
+- **Link**: Manage shareable agent links
+- **Knowledge Base**: Add and manage agent knowledge bases
+- **LLM Usage**: Track language model usage and costs
+- **Branches**: Manage agent version branches
+- **Deployments**: Handle agent deployments
+- **Drafts**: Work with draft agent configurations
+
+<Card title="API Reference" icon="book" href="https://elevenlabs.io/docs/api-reference">
+  View complete API documentation for all agent endpoints
+</Card>

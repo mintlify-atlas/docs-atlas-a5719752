@@ -1,0 +1,333 @@
+---
+title: "Audio Isolation"
+description: "Remove background noise from audio using AI-powered isolation"
+---
+
+## Overview
+
+Audio Isolation removes background noise from audio files, producing clean speech output. This is perfect for cleaning up recordings before voice cloning, dubbing, or general audio processing.
+
+## Basic Isolation
+
+Remove background noise from an audio file:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio = client.audio_isolation.convert(
+    audio=open("noisy_audio.mp3", "rb")
+)
+
+# Save the cleaned audio
+with open("clean_audio.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+## Streaming Isolation
+
+Stream the cleaned audio in real-time:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio_stream = client.audio_isolation.stream(
+    audio=open("noisy_recording.mp3", "rb")
+)
+
+# Process the cleaned audio stream
+with open("cleaned_output.mp3", "wb") as f:
+    for chunk in audio_stream:
+        f.write(chunk)
+```
+
+## Parameters
+
+<ParamField path="audio" type="File" required>
+  The audio file to process and remove background noise from.
+</ParamField>
+
+<ParamField path="file_format" type="string">
+  The format of input audio. Options:
+  - `pcm_s16le_16` - 16-bit PCM at 16kHz, mono, little-endian (lower latency)
+  - `other` - Any other audio format (default)
+</ParamField>
+
+<ParamField path="preview_b_64" type="string">
+  Optional preview image base64 for tracking this generation.
+</ParamField>
+
+## PCM Input for Lower Latency
+
+Use PCM format for the lowest latency:
+
+```python
+# Input must be 16-bit PCM at 16kHz, single channel (mono), little-endian
+audio = client.audio_isolation.convert(
+    audio=open("input.pcm", "rb"),
+    file_format="pcm_s16le_16"
+)
+
+with open("output.pcm", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+## Batch Processing
+
+Process multiple files:
+
+```python
+import os
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+input_dir = "noisy_recordings/"
+output_dir = "clean_recordings/"
+
+os.makedirs(output_dir, exist_ok=True)
+
+for filename in os.listdir(input_dir):
+    if filename.endswith((".mp3", ".wav", ".m4a")):
+        print(f"Processing {filename}...")
+        
+        input_path = os.path.join(input_dir, filename)
+        output_path = os.path.join(output_dir, f"clean_{filename}")
+        
+        audio = client.audio_isolation.convert(
+            audio=open(input_path, "rb")
+        )
+        
+        with open(output_path, "wb") as f:
+            for chunk in audio:
+                f.write(chunk)
+        
+        print(f"Saved to {output_path}")
+
+print("Batch processing complete!")
+```
+
+## Async Processing
+
+Process audio asynchronously:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+async def clean_audio(filepath: str, output_path: str):
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    audio = await client.audio_isolation.convert(
+        audio=open(filepath, "rb")
+    )
+    
+    with open(output_path, "wb") as f:
+        async for chunk in audio:
+            f.write(chunk)
+    
+    print(f"Cleaned: {output_path}")
+
+asyncio.run(clean_audio("noisy.mp3", "clean.mp3"))
+```
+
+## Parallel Processing
+
+Process multiple files concurrently:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+async def clean_audio_file(client, input_path, output_path):
+    """Clean a single audio file"""
+    audio = await client.audio_isolation.convert(
+        audio=open(input_path, "rb")
+    )
+    
+    with open(output_path, "wb") as f:
+        async for chunk in audio:
+            f.write(chunk)
+    
+    return output_path
+
+async def clean_multiple_files(file_pairs):
+    """Clean multiple files in parallel"""
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    tasks = [
+        clean_audio_file(client, input_path, output_path)
+        for input_path, output_path in file_pairs
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    return results
+
+# Process 5 files concurrently
+file_pairs = [
+    ("noisy1.mp3", "clean1.mp3"),
+    ("noisy2.mp3", "clean2.mp3"),
+    ("noisy3.mp3", "clean3.mp3"),
+    ("noisy4.mp3", "clean4.mp3"),
+    ("noisy5.mp3", "clean5.mp3"),
+]
+
+results = asyncio.run(clean_multiple_files(file_pairs))
+print(f"Processed {len(results)} files")
+```
+
+## Integration with Voice Cloning
+
+Clean audio before voice cloning:
+
+```python
+from elevenlabs.client import ElevenLabs
+import os
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Step 1: Clean the audio samples
+noisy_samples = ["sample1.mp3", "sample2.mp3", "sample3.mp3"]
+clean_samples = []
+
+for i, sample in enumerate(noisy_samples):
+    print(f"Cleaning {sample}...")
+    
+    audio = client.audio_isolation.convert(
+        audio=open(sample, "rb")
+    )
+    
+    clean_path = f"clean_sample_{i}.mp3"
+    with open(clean_path, "wb") as f:
+        for chunk in audio:
+            f.write(chunk)
+    
+    clean_samples.append(clean_path)
+
+# Step 2: Create voice clone with cleaned samples
+voice = client.voices.ivc.create(
+    name="Clean Voice Clone",
+    description="Voice clone from cleaned audio samples",
+    files=clean_samples
+)
+
+print(f"Voice cloned with ID: {voice.voice_id}")
+
+# Cleanup temporary files
+for sample in clean_samples:
+    os.remove(sample)
+```
+
+## With Speech-to-Speech
+
+Clean input before voice conversion:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Option 1: Clean first, then convert
+audio_cleaned = client.audio_isolation.convert(
+    audio=open("noisy_input.mp3", "rb")
+)
+
+# Save temporarily
+with open("temp_clean.mp3", "wb") as f:
+    for chunk in audio_cleaned:
+        f.write(chunk)
+
+# Then convert voice
+audio_converted = client.speech_to_speech.convert(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    audio=open("temp_clean.mp3", "rb"),
+    model_id="eleven_multilingual_sts_v2"
+)
+
+# Option 2: Use built-in noise removal in speech-to-speech
+audio_converted = client.speech_to_speech.convert(
+    voice_id="JBFqnCBsd6RMkjVDRZzb",
+    audio=open("noisy_input.mp3", "rb"),
+    model_id="eleven_multilingual_sts_v2",
+    remove_background_noise=True  # Built-in cleaning
+)
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Voice Cloning Prep" icon="clone">
+    Clean samples before creating voice clones
+  </Card>
+  <Card title="Podcast Editing" icon="podcast">
+    Remove background noise from recordings
+  </Card>
+  <Card title="Interview Cleanup" icon="microphone">
+    Improve audio quality of interviews
+  </Card>
+  <Card title="Content Creation" icon="video">
+    Clean audio for videos and content
+  </Card>
+</CardGroup>
+
+## Best Practices
+
+<Tip>
+  - Audio isolation works best on recordings with clear speech
+  - For voice cloning, always clean samples first for better results
+  - Use PCM input format for real-time or low-latency applications
+  - Process files in parallel for large batches
+  - Keep original files as backups
+</Tip>
+
+<Info>
+  Audio isolation is designed for speech. It may not work well for music or non-speech audio where background elements are important.
+</Info>
+
+<Warning>
+  If the input audio does not contain background noise, using audio isolation may actually reduce quality. Only use this feature when background noise is present.
+</Warning>
+
+## Output Format
+
+The output audio maintains the same format as the input (e.g., MP3 in, MP3 out). The audio isolation process:
+
+- Preserves speech frequencies
+- Removes background noise
+- Maintains original sample rate and format
+- Keeps speech quality intact
+
+## Error Handling
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+try:
+    audio = client.audio_isolation.convert(
+        audio=open("noisy.mp3", "rb")
+    )
+    
+    with open("clean.mp3", "wb") as f:
+        for chunk in audio:
+            f.write(chunk)
+    
+    print("Audio cleaned successfully")
+    
+except FileNotFoundError:
+    print("Input file not found")
+except Exception as e:
+    print(f"Error during audio isolation: {e}")
+```
+
+## Related Features
+
+- [Voice Cloning](/advanced/voice-cloning) - Create voices from clean samples
+- [Speech to Speech](/advanced/speech-to-speech) - Convert speech with noise removal
+- [Dubbing](/advanced/dubbing) - Clean audio before dubbing

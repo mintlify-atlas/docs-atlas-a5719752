@@ -1,0 +1,368 @@
+---
+title: Voices
+description: Manage, search, and customize voices for text-to-speech generation
+---
+
+The ElevenLabs SDK provides comprehensive voice management capabilities, allowing you to list, search, customize, and manage voices for your text-to-speech projects.
+
+## Listing All Voices
+
+Retrieve all available voices for your account:
+
+```python
+from elevenlabs.client import ElevenLabs
+
+client = ElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+response = client.voices.get_all()
+print(response.voices)
+```
+
+## Searching Voices
+
+Use the `search()` method for advanced filtering and pagination:
+
+```python
+response = client.voices.search()
+print(response.voices)
+```
+
+### Search with Filters
+
+Filter voices by various criteria:
+
+```python
+# Search by text query
+response = client.voices.search(
+    search="professional",  # Search in name, description, labels
+    page_size=20
+)
+
+# Filter by voice type
+response = client.voices.search(
+    voice_type="cloned",  # personal, community, default, workspace
+    page_size=10
+)
+
+# Filter by category
+response = client.voices.search(
+    category="premade",  # premade, cloned, generated, professional
+    page_size=15
+)
+
+# Combine multiple filters
+response = client.voices.search(
+    search="narrator",
+    voice_type="personal",
+    category="cloned",
+    sort="created_at_unix",
+    sort_direction="desc"
+)
+```
+
+<ParamField path="voice_type" type="string">
+  Filter by voice type:
+  - `personal` - Your custom voices
+  - `community` - Community-shared voices
+  - `default` - ElevenLabs default voices
+  - `workspace` - Workspace voices
+  - `non-default` - All except default
+  - `saved` - Non-default including saved defaults
+</ParamField>
+
+<ParamField path="category" type="string">
+  Filter by voice category:
+  - `premade` - Pre-made ElevenLabs voices
+  - `cloned` - Instant voice clones
+  - `generated` - AI-generated voices
+  - `professional` - Professional voice clones
+</ParamField>
+
+### Pagination
+
+Handle large voice collections with pagination:
+
+```python
+# First page
+response = client.voices.search(
+    page_size=10,
+    include_total_count=True
+)
+
+print(f"Total voices: {response.total_count}")
+print(f"Has more: {response.has_more}")
+
+# Next page
+if response.has_more:
+    next_response = client.voices.search(
+        page_size=10,
+        next_page_token=response.next_page_token
+    )
+```
+
+<Note>
+The `total_count` is a live snapshot and may change between requests. For reliable pagination, use the `has_more` flag.
+</Note>
+
+## Getting Voice Details
+
+Retrieve detailed information about a specific voice:
+
+```python
+voice = client.voices.get(
+    voice_id="21m00Tcm4TlvDq8ikWAM"
+)
+
+print(f"Name: {voice.name}")
+print(f"Category: {voice.category}")
+print(f"Description: {voice.description}")
+print(f"Labels: {voice.labels}")
+```
+
+## Voice Settings
+
+Get and apply custom voice settings:
+
+```python
+from elevenlabs.types import VoiceSettings
+
+# Get default settings for a voice
+settings = client.voices.settings.get("21m00Tcm4TlvDq8ikWAM")
+
+# Use custom settings for generation
+audio = client.text_to_speech.convert(
+    text="Custom voice settings in action.",
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    voice_settings=VoiceSettings(
+        stability=0.5,         # 0.0 to 1.0
+        similarity_boost=0.75, # 0.0 to 1.0
+        style=0.5,            # 0.0 to 1.0 (if supported)
+        use_speaker_boost=True
+    )
+)
+```
+
+<ParamField path="stability" type="float">
+  Controls voice consistency (0.0-1.0). Higher values produce more stable and consistent voice, lower values allow more variation.
+</ParamField>
+
+<ParamField path="similarity_boost" type="float">
+  Controls similarity to the original voice (0.0-1.0). Higher values make the voice more similar to the original.
+</ParamField>
+
+## Cloning Voices
+
+Create instant voice clones from audio samples:
+
+```python
+voice = client.voices.ivc.create(
+    name="Alex",
+    description="An old American male voice with a slight hoarseness",
+    files=[
+        "./sample_0.mp3",
+        "./sample_1.mp3",
+        "./sample_2.mp3"
+    ]
+)
+
+print(f"Created voice: {voice.voice_id}")
+```
+
+<Tip>
+For best results:
+- Provide 3-10 audio samples
+- Each sample should be 30 seconds to 5 minutes
+- Use clear, high-quality recordings
+- Ensure consistent recording environment
+</Tip>
+
+## Updating Voices
+
+Modify existing voices:
+
+```python
+response = client.voices.update(
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    name="Updated Voice Name",
+    description="Updated description",
+    labels={
+        "accent": "american",
+        "age": "middle-aged",
+        "gender": "male"
+    }
+)
+```
+
+## Deleting Voices
+
+Remove a voice from your account:
+
+```python
+response = client.voices.delete(
+    voice_id="21m00Tcm4TlvDq8ikWAM"
+)
+
+print(response.message)
+```
+
+<Warning>
+Deleting a voice is permanent and cannot be undone. Ensure you have backups if needed.
+</Warning>
+
+## Shared Voices
+
+Explore and use voices shared by the community:
+
+```python
+# Browse shared voices
+response = client.voices.get_shared(
+    page_size=30,
+    category="professional",
+    gender="female",
+    age="young",
+    accent="british",
+    language="en"
+)
+
+for voice in response.voices:
+    print(f"{voice.name} - {voice.description}")
+```
+
+### Adding Shared Voices
+
+Add a shared voice to your collection:
+
+```python
+response = client.voices.share(
+    public_user_id="63e06b7e7cafdc46be4d2e0b3f045940231ae058d508589653d74d1265a574ca",
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    new_name="Sarah - British Narrator"
+)
+```
+
+## Finding Similar Voices
+
+Find voices similar to an audio sample:
+
+```python
+response = client.voices.find_similar_voices(
+    audio_file=open("reference_audio.mp3", "rb"),
+    similarity_threshold=1.0,  # 0.0 to 2.0 (lower = more similar)
+    top_k=10  # Return top 10 matches
+)
+
+for voice in response.voices:
+    print(f"Similar voice: {voice.name}")
+```
+
+## Voice IDs by Type
+
+Lookup multiple voices by their IDs:
+
+```python
+response = client.voices.search(
+    voice_ids=["voice_id_1", "voice_id_2", "voice_id_3"]
+)
+```
+
+<Note>
+You can query up to 100 voice IDs in a single request.
+</Note>
+
+## Async Voice Management
+
+Use async methods for non-blocking operations:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+client = AsyncElevenLabs(
+    api_key="YOUR_API_KEY"
+)
+
+async def list_voices():
+    response = await client.voices.search(
+        page_size=20,
+        search="narrator"
+    )
+    return response.voices
+
+async def get_voice_details(voice_id: str):
+    voice = await client.voices.get(voice_id)
+    return voice
+
+async def main():
+    # Run operations concurrently
+    voices, details = await asyncio.gather(
+        list_voices(),
+        get_voice_details("21m00Tcm4TlvDq8ikWAM")
+    )
+    print(f"Found {len(voices)} voices")
+    print(f"Voice details: {details.name}")
+
+asyncio.run(main())
+```
+
+## Working with Voice Samples
+
+Manage individual voice samples:
+
+```python
+# Add a sample to an existing voice
+response = client.voices.samples.add(
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    file=open("new_sample.mp3", "rb")
+)
+
+# Delete a sample
+client.voices.samples.delete(
+    voice_id="21m00Tcm4TlvDq8ikWAM",
+    sample_id="sample_id_here"
+)
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Voice Selection">
+    - Test multiple voices to find the best fit for your use case
+    - Consider the voice's characteristics (age, accent, gender) for your audience
+    - Use professional voices for commercial applications
+    - Preview voices on [ElevenLabs Voice Lab](https://elevenlabs.io/voice-lab)
+  </Accordion>
+
+  <Accordion title="Voice Settings Optimization">
+    - Start with default settings and adjust incrementally
+    - Higher stability for consistent narration
+    - Lower stability for more expressive dialogue
+    - Use speaker boost for better quality on challenging voices
+  </Accordion>
+
+  <Accordion title="Voice Cloning Tips">
+    - Use 3-10 high-quality samples for best results
+    - Ensure samples have minimal background noise
+    - Remove background noise with `remove_background_noise=True`
+    - Keep sample lengths between 30 seconds and 5 minutes
+  </Accordion>
+
+  <Accordion title="Performance">
+    ```python
+    # Cache voice lists to reduce API calls
+    voices_cache = None
+    
+    def get_voices():
+        global voices_cache
+        if voices_cache is None:
+            response = client.voices.search(page_size=100)
+            voices_cache = response.voices
+        return voices_cache
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Card title="Next Steps" icon="arrow-right" href="/models">
+  Learn about available TTS models and their capabilities
+</Card>

@@ -1,0 +1,238 @@
+---
+title: "Async Client"
+description: "Using AsyncElevenLabs for asynchronous API operations"
+---
+
+## Overview
+
+The `AsyncElevenLabs` client allows you to make API calls asynchronously using Python's `asyncio` framework. This is particularly useful when you need to make multiple API calls concurrently or integrate with async web frameworks.
+
+## Installation
+
+The async client is included in the standard ElevenLabs package:
+
+```bash
+pip install elevenlabs
+```
+
+## Basic Usage
+
+Here's how to use the async client to list available models:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+elevenlabs = AsyncElevenLabs(
+    api_key="MY_API_KEY"
+)
+
+async def print_models() -> None:
+    models = await elevenlabs.models.list()
+    print(models)
+
+asyncio.run(print_models())
+```
+
+## Configuration
+
+The `AsyncElevenLabs` client accepts the same configuration parameters as the synchronous client:
+
+<ParamField path="api_key" type="str" required>
+  Your ElevenLabs API key. Defaults to the `ELEVENLABS_API_KEY` environment variable.
+</ParamField>
+
+<ParamField path="base_url" type="str">
+  The base URL for API requests. Override this for testing or custom endpoints.
+</ParamField>
+
+<ParamField path="environment" type="ElevenLabsEnvironment" default="PRODUCTION">
+  The environment to use for requests from the client.
+</ParamField>
+
+<ParamField path="timeout" type="float" default={240}>
+  The timeout in seconds for requests. Default is 240 seconds (4 minutes).
+</ParamField>
+
+<ParamField path="httpx_client" type="httpx.AsyncClient">
+  A custom async httpx client for advanced configuration.
+</ParamField>
+
+## Common Async Operations
+
+### Text-to-Speech Generation
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def generate_speech():
+    # Generate audio asynchronously
+    audio = await client.text_to_speech.convert(
+        text="Hello from the async client!",
+        voice_id="JBFqnCBsd6RMkjVDRZzb",
+        model_id="eleven_multilingual_v2"
+    )
+    
+    # Save to file
+    with open("output.mp3", "wb") as f:
+        f.write(audio)
+
+asyncio.run(generate_speech())
+```
+
+### Listing Voices
+
+```python
+async def list_voices():
+    response = await client.voices.search()
+    for voice in response.voices:
+        print(f"{voice.name}: {voice.voice_id}")
+
+asyncio.run(list_voices())
+```
+
+### Working with Pronunciation Dictionaries
+
+```python
+from elevenlabs.pronunciation_dictionaries import (
+    BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias,
+)
+
+async def create_dictionary():
+    dictionary = await client.pronunciation_dictionaries.create_from_rules(
+        rules=[
+            BodyAddAPronunciationDictionaryV1PronunciationDictionariesAddFromRulesPostRulesItem_Alias(
+                string_to_replace="AI",
+                case_sensitive=True,
+                word_boundaries=True,
+                alias="Artificial Intelligence",
+            )
+        ],
+        name="Tech Abbreviations",
+        description="Common technology abbreviations"
+    )
+    print(f"Created dictionary: {dictionary.id}")
+
+asyncio.run(create_dictionary())
+```
+
+## Concurrent Operations
+
+One of the main benefits of the async client is the ability to run multiple operations concurrently:
+
+```python
+import asyncio
+from elevenlabs.client import AsyncElevenLabs
+
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+async def generate_multiple_speeches():
+    texts = [
+        "First message",
+        "Second message",
+        "Third message"
+    ]
+    
+    # Run all conversions concurrently
+    tasks = [
+        client.text_to_speech.convert(
+            text=text,
+            voice_id="JBFqnCBsd6RMkjVDRZzb",
+            model_id="eleven_multilingual_v2"
+        )
+        for text in texts
+    ]
+    
+    # Wait for all to complete
+    results = await asyncio.gather(*tasks)
+    
+    # Save all results
+    for i, audio in enumerate(results):
+        with open(f"output_{i}.mp3", "wb") as f:
+            f.write(audio)
+
+asyncio.run(generate_multiple_speeches())
+```
+
+## Integration with Web Frameworks
+
+The async client integrates seamlessly with async web frameworks like FastAPI:
+
+```python
+from fastapi import FastAPI, HTTPException
+from elevenlabs.client import AsyncElevenLabs
+from pydantic import BaseModel
+
+app = FastAPI()
+client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+
+class TextToSpeechRequest(BaseModel):
+    text: str
+    voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
+
+@app.post("/tts")
+async def text_to_speech(request: TextToSpeechRequest):
+    try:
+        audio = await client.text_to_speech.convert(
+            text=request.text,
+            voice_id=request.voice_id,
+            model_id="eleven_multilingual_v2"
+        )
+        return {"success": True, "message": "Audio generated"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use context managers for resource cleanup">
+    When working with the async client, ensure proper cleanup of resources:
+
+    ```python
+    async with AsyncElevenLabs(api_key="YOUR_API_KEY") as client:
+        result = await client.models.list()
+    ```
+  </Accordion>
+
+  <Accordion title="Handle errors appropriately">
+    Always wrap async operations in try-except blocks to handle potential errors:
+
+    ```python
+    try:
+        result = await client.text_to_speech.convert(...)
+    except Exception as e:
+        print(f"Error: {e}")
+    ```
+  </Accordion>
+
+  <Accordion title="Use asyncio.gather for concurrent operations">
+    When you need to perform multiple operations, use `asyncio.gather` to run them concurrently:
+
+    ```python
+    results = await asyncio.gather(
+        client.voices.search(),
+        client.models.list(),
+        return_exceptions=True  # Continue even if one fails
+    )
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Note>
+  The async client provides the same functionality as the synchronous client. All methods that perform I/O operations are awaitable.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/guides/error-handling">
+    Learn how to handle errors in async operations
+  </Card>
+  <Card title="Pronunciation Dictionaries" icon="book" href="/guides/pronunciation-dictionaries">
+    Create custom pronunciation rules
+  </Card>
+</CardGroup>
