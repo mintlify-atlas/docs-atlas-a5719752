@@ -1,0 +1,205 @@
+---
+title: Usage
+description: Track character usage and billing statistics
+icon: chart-simple
+---
+
+## Overview
+
+The `usage` client provides methods to retrieve detailed usage statistics for your ElevenLabs account, including character consumption breakdown by feature.
+
+## get_character_usage()
+
+Get character usage statistics for a specified time period.
+
+### Method Signature
+
+```python
+client.usage.get_character_usage(
+    start_unix: Optional[int] = None,
+    end_unix: Optional[int] = None,
+    request_options: Optional[RequestOptions] = None
+) -> CharacterUsageResponse
+```
+
+### Parameters
+
+<ParamField path="start_unix" type="int">
+  Start of the time period as a Unix timestamp. Defaults to the beginning of the current billing period.
+</ParamField>
+
+<ParamField path="end_unix" type="int">
+  End of the time period as a Unix timestamp. Defaults to the current time.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+### Returns
+
+`CharacterUsageResponse` containing:
+
+<ResponseField name="character_count" type="int">
+  Total characters used in the specified period
+</ResponseField>
+
+<ResponseField name="breakdown" type="object">
+  Character usage broken down by feature
+  
+  <Expandable title="breakdown properties">
+    <ResponseField name="text_to_speech" type="int">
+      Characters used for text-to-speech generation
+    </ResponseField>
+    
+    <ResponseField name="speech_to_speech" type="int">
+      Characters used for speech-to-speech conversion
+    </ResponseField>
+    
+    <ResponseField name="voice_cloning" type="int">
+      Characters used for voice cloning operations
+    </ResponseField>
+    
+    <ResponseField name="projects" type="int">
+      Characters used in projects (e.g., dubbing, audio native)
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+import time
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Get usage for the last 30 days
+end_time = int(time.time())
+start_time = end_time - (30 * 24 * 60 * 60)  # 30 days ago
+
+usage = client.usage.get_character_usage(
+    start_unix=start_time,
+    end_unix=end_time
+)
+
+print(f"Total characters used: {usage.character_count}")
+print(f"\nBreakdown:")
+print(f"  Text-to-speech: {usage.breakdown.text_to_speech}")
+print(f"  Speech-to-speech: {usage.breakdown.speech_to_speech}")
+print(f"  Voice cloning: {usage.breakdown.voice_cloning}")
+print(f"  Projects: {usage.breakdown.projects}")
+```
+
+### Example Output
+
+```
+Total characters used: 45823
+
+Breakdown:
+  Text-to-speech: 32150
+  Speech-to-speech: 8420
+  Voice cloning: 3253
+  Projects: 2000
+```
+
+## get_usage_by_date()
+
+Get usage statistics grouped by date.
+
+```python
+from datetime import datetime, timedelta
+
+# Get daily usage for the last week
+end_date = datetime.now()
+start_date = end_date - timedelta(days=7)
+
+daily_usage = client.usage.get_usage_by_date(
+    start_unix=int(start_date.timestamp()),
+    end_unix=int(end_date.timestamp())
+)
+
+for day in daily_usage.usage:
+    print(f"{day.date}: {day.character_count} characters")
+```
+
+## Async Usage
+
+```python
+from elevenlabs import AsyncElevenLabs
+import asyncio
+import time
+
+async def get_usage_stats():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    end_time = int(time.time())
+    start_time = end_time - (7 * 24 * 60 * 60)  # Last 7 days
+    
+    usage = await client.usage.get_character_usage(
+        start_unix=start_time,
+        end_unix=end_time
+    )
+    
+    print(f"Characters used (last 7 days): {usage.character_count}")
+    return usage
+
+usage = asyncio.run(get_usage_stats())
+```
+
+## Monitoring Usage
+
+Create a simple usage monitoring script:
+
+```python
+from elevenlabs import ElevenLabs
+import time
+
+def check_usage_percentage(client):
+    """Check what percentage of quota has been used."""
+    # Get user info for limits
+    user = client.user.get()
+    character_limit = user.subscription.character_limit
+    
+    # Get current period usage
+    usage = client.usage.get_character_usage()
+    used = usage.character_count
+    
+    percentage = (used / character_limit) * 100
+    
+    print(f"Usage: {used:,} / {character_limit:,} characters ({percentage:.1f}%)")
+    
+    if percentage > 90:
+        print("⚠️ Warning: Usage exceeds 90% of quota")
+    elif percentage > 75:
+        print("⚠️ Caution: Usage exceeds 75% of quota")
+    else:
+        print("✓ Usage is within normal range")
+    
+    return percentage
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+check_usage_percentage(client)
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Quota Monitoring" icon="gauge">
+    Track usage against your subscription limits
+  </Card>
+  <Card title="Cost Tracking" icon="dollar-sign">
+    Monitor character consumption for budgeting
+  </Card>
+  <Card title="Usage Analytics" icon="chart-bar">
+    Analyze which features consume the most characters
+  </Card>
+  <Card title="Alerts" icon="bell">
+    Set up automated alerts when approaching limits
+  </Card>
+</CardGroup>
+
+## Related Methods
+
+- [User](/api-reference/user) - Get account and subscription information
+- [Models](/api-reference/models) - Available AI models

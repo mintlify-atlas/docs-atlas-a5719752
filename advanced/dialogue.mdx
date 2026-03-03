@@ -1,0 +1,393 @@
+---
+title: Multi-Voice Dialogue
+description: Generate conversations with multiple distinct voices
+---
+
+Create natural-sounding dialogues and conversations with up to 10 different voices. Perfect for audiobooks, podcasts, training materials, and interactive content.
+
+## Quick Start
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.types import DialogueInput
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Create a simple dialogue
+dialogue = [
+    DialogueInput(
+        text="Hello! How can I help you today?",
+        voice_id="21m00Tcm4TlvDq8ikWAM"  # Rachel
+    ),
+    DialogueInput(
+        text="I'd like to know more about your services.",
+        voice_id="AZnzlk1XvdvUeBnXmlld"  # Domi
+    )
+]
+
+audio = client.text_to_dialogue.convert(inputs=dialogue)
+
+with open("conversation.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Multiple Voices" icon="users">
+    Use up to 10 different voices in a single dialogue
+  </Card>
+  <Card title="Natural Flow" icon="comments">
+    Seamless transitions between speakers
+  </Card>
+  <Card title="Timestamps" icon="clock">
+    Get timing information for each voice segment
+  </Card>
+  <Card title="High Quality" icon="star">
+    Professional audio output with natural pacing
+  </Card>
+</CardGroup>
+
+## Creating Dialogues
+
+### Basic Conversation
+
+```python
+from elevenlabs import ElevenLabs
+from elevenlabs.types import DialogueInput
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Define the dialogue
+dialogue = [
+    DialogueInput(
+        text="Welcome to our store! How may I assist you?",
+        voice_id="voice_id_1"  # Store employee
+    ),
+    DialogueInput(
+        text="Hi! I'm looking for a birthday gift.",
+        voice_id="voice_id_2"  # Customer
+    ),
+    DialogueInput(
+        text="Wonderful! What does the person enjoy?",
+        voice_id="voice_id_1"  # Store employee
+    ),
+    DialogueInput(
+        text="They love reading mystery novels.",
+        voice_id="voice_id_2"  # Customer
+    )
+]
+
+# Generate the dialogue
+audio = client.text_to_dialogue.convert(
+    inputs=dialogue,
+    model_id="eleven_multilingual_v2"
+)
+
+with open("conversation.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+### Audiobook with Character Voices
+
+```python
+# Audiobook excerpt with narrator and character voices
+audiobook_dialogue = [
+    DialogueInput(
+        text="The detective entered the dimly lit room,",
+        voice_id="narrator_voice_id"
+    ),
+    DialogueInput(
+        text="Someone's been here recently,",
+        voice_id="detective_voice_id"
+    ),
+    DialogueInput(
+        text="she said, examining the scattered papers.",
+        voice_id="narrator_voice_id"
+    ),
+    DialogueInput(
+        text="What are you doing here?",
+        voice_id="suspect_voice_id"
+    ),
+    DialogueInput(
+        text="a voice called from the doorway.",
+        voice_id="narrator_voice_id"
+    )
+]
+
+audio = client.text_to_dialogue.convert(
+    inputs=audiobook_dialogue,
+    model_id="eleven_v3"
+)
+```
+
+### Podcast with Multiple Hosts
+
+```python
+# Podcast episode intro
+podcast_intro = [
+    DialogueInput(
+        text="Welcome back to Tech Talk! I'm Sarah.",
+        voice_id="host_1_voice_id"
+    ),
+    DialogueInput(
+        text="And I'm Mike. Today we're discussing AI.",
+        voice_id="host_2_voice_id"
+    ),
+    DialogueInput(
+        text="That's right! We have an exciting topic.",
+        voice_id="host_1_voice_id"
+    ),
+    DialogueInput(
+        text="Let's dive right in!",
+        voice_id="host_2_voice_id"
+    )
+]
+
+audio = client.text_to_dialogue.convert(
+    inputs=podcast_intro,
+    model_id="eleven_turbo_v2_5"  # Fast generation
+)
+```
+
+## Advanced Features
+
+### Dialogue with Timestamps
+
+Get timing information for each voice segment:
+
+```python
+# Generate dialogue with timestamp data
+result = client.text_to_dialogue.convert_with_timestamps(
+    inputs=dialogue,
+    model_id="eleven_multilingual_v2"
+)
+
+# Access audio data
+audio_data = result.audio
+
+# Access timestamp information
+for segment in result.voice_segments:
+    print(f"Voice {segment.voice_id}:")
+    print(f"  Start: {segment.start_time}s")
+    print(f"  End: {segment.end_time}s")
+    print(f"  Text: {segment.text}")
+```
+
+### Streaming Dialogue
+
+Stream dialogue generation in real-time:
+
+```python
+from elevenlabs import stream
+
+# Stream the dialogue
+audio_stream = client.text_to_dialogue.stream(
+    inputs=dialogue,
+    model_id="eleven_turbo_v2_5"
+)
+
+# Play as it generates
+stream(audio_stream)
+
+# Or process chunks manually
+for chunk in audio_stream:
+    # Process each audio chunk
+    pass
+```
+
+## Customization
+
+### Model Selection
+
+```python
+# Use Eleven v3 for dramatic performances
+audio = client.text_to_dialogue.convert(
+    inputs=dialogue,
+    model_id="eleven_v3"
+)
+
+# Use Turbo for faster generation
+audio = client.text_to_dialogue.convert(
+    inputs=dialogue,
+    model_id="eleven_turbo_v2_5"
+)
+
+# Use Multilingual v2 for best stability
+audio = client.text_to_dialogue.convert(
+    inputs=dialogue,
+    model_id="eleven_multilingual_v2"
+)
+```
+
+### Language Support
+
+```python
+# Specify language for better pronunciation
+audio = client.text_to_dialogue.convert(
+    inputs=dialogue,
+    language_code="es",  # Spanish
+    model_id="eleven_multilingual_v2"
+)
+```
+
+### Custom Voice Settings
+
+```python
+from elevenlabs.types import ModelSettingsResponseModel
+
+# Apply custom settings
+settings = ModelSettingsResponseModel(
+    stability=0.7,
+    similarity_boost=0.8
+)
+
+audio = client.text_to_dialogue.convert(
+    inputs=dialogue,
+    settings=settings,
+    model_id="eleven_multilingual_v2"
+)
+```
+
+### Pronunciation Dictionaries
+
+```python
+from elevenlabs.types import PronunciationDictionaryVersionLocator
+
+# Use pronunciation dictionary for technical terms
+dictionaries = [
+    PronunciationDictionaryVersionLocator(
+        pronunciation_dictionary_id="dict_id",
+        version_id="version_id"
+    )
+]
+
+audio = client.text_to_dialogue.convert(
+    inputs=dialogue,
+    pronunciation_dictionary_locators=dictionaries
+)
+```
+
+## Async Usage
+
+```python
+from elevenlabs import AsyncElevenLabs
+import asyncio
+
+async def generate_dialogue():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    dialogue = [
+        {"text": "Hello there!", "voice_id": "voice_1"},
+        {"text": "Hi! Nice to meet you.", "voice_id": "voice_2"}
+    ]
+    
+    audio = await client.text_to_dialogue.convert(inputs=dialogue)
+    
+    chunks = []
+    async for chunk in audio:
+        chunks.append(chunk)
+    
+    return b"".join(chunks)
+
+audio_data = asyncio.run(generate_dialogue())
+```
+
+## Use Cases
+
+### Educational Content
+
+```python
+# Create interactive learning content
+educational_dialogue = [
+    DialogueInput(
+        text="Today we'll learn about photosynthesis.",
+        voice_id="teacher_voice"
+    ),
+    DialogueInput(
+        text="What is photosynthesis?",
+        voice_id="student_voice"
+    ),
+    DialogueInput(
+        text="Great question! It's how plants make food.",
+        voice_id="teacher_voice"
+    )
+]
+```
+
+### Customer Service Training
+
+```python
+# Training scenarios
+training_scenario = [
+    DialogueInput(
+        text="Thank you for calling. How can I help you?",
+        voice_id="agent_voice"
+    ),
+    DialogueInput(
+        text="I have a problem with my recent order.",
+        voice_id="customer_voice"
+    ),
+    DialogueInput(
+        text="I'm sorry to hear that. Let me help you.",
+        voice_id="agent_voice"
+    )
+]
+```
+
+### Interactive Stories
+
+```python
+# Choose-your-own-adventure style content
+story_dialogue = [
+    DialogueInput(
+        text="You find yourself at a crossroads.",
+        voice_id="narrator_voice"
+    ),
+    DialogueInput(
+        text="Which path will you take?",
+        voice_id="narrator_voice"
+    )
+]
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Voice Selection">
+    - Choose distinct voices for each character
+    - Match voice characteristics to character traits
+    - Use consistent voices throughout the dialogue
+    - Test voice combinations before production
+  </Accordion>
+  
+  <Accordion title="Script Writing">
+    - Write natural, conversational text
+    - Include appropriate pauses with punctuation
+    - Keep individual segments concise
+    - Vary sentence structure for natural flow
+  </Accordion>
+  
+  <Accordion title="Performance Optimization">
+    - Use Turbo models for faster generation
+    - Consider streaming for long dialogues
+    - Batch process multiple dialogues with async
+    - Cache frequently used voice combinations
+  </Accordion>
+</AccordionGroup>
+
+## Limitations
+
+<Warning>
+  - Maximum of 10 unique voice IDs per dialogue
+  - Total text length may be limited by your subscription tier
+  - Generation time increases with dialogue length and number of voices
+</Warning>
+
+## Related Features
+
+- [Text to Speech](/text-to-speech) - Single voice generation
+- [Voice Cloning](/advanced/voice-cloning) - Create custom voices
+- [Voices](/voices) - Browse available voices

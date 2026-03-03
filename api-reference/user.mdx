@@ -1,0 +1,175 @@
+---
+title: User
+description: Get user account information and subscription details
+icon: user
+---
+
+## Overview
+
+The `user` client provides methods to retrieve information about your ElevenLabs account, including subscription details and usage limits.
+
+## get()
+
+Retrieve information about the authenticated user.
+
+### Method Signature
+
+```python
+client.user.get(
+    request_options: Optional[RequestOptions] = None
+) -> User
+```
+
+### Parameters
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+### Returns
+
+`User` object containing:
+
+<ResponseField name="subscription" type="object">
+  Information about your current subscription plan
+  
+  <Expandable title="subscription properties">
+    <ResponseField name="tier" type="str">
+      Subscription tier name (e.g., "free", "starter", "creator", "pro")
+    </ResponseField>
+    
+    <ResponseField name="character_count" type="int">
+      Number of characters available in your plan
+    </ResponseField>
+    
+    <ResponseField name="character_limit" type="int">
+      Total character limit for your subscription
+    </ResponseField>
+    
+    <ResponseField name="can_extend_character_limit" type="bool">
+      Whether you can purchase additional characters
+    </ResponseField>
+    
+    <ResponseField name="allowed_to_extend_character_limit" type="bool">
+      Whether character limit extension is allowed
+    </ResponseField>
+    
+    <ResponseField name="next_character_count_reset_unix" type="int">
+      Unix timestamp when character count resets
+    </ResponseField>
+    
+    <ResponseField name="voice_limit" type="int">
+      Maximum number of voices you can create
+    </ResponseField>
+    
+    <ResponseField name="max_voice_add_edits" type="int">
+      Maximum number of voice edits allowed
+    </ResponseField>
+    
+    <ResponseField name="voice_add_edit_counter" type="int">
+      Current number of voice edits used
+    </ResponseField>
+    
+    <ResponseField name="professional_voice_limit" type="int">
+      Maximum number of professional voice clones
+    </ResponseField>
+    
+    <ResponseField name="can_use_instant_voice_cloning" type="bool">
+      Whether instant voice cloning is available
+    </ResponseField>
+    
+    <ResponseField name="can_use_professional_voice_cloning" type="bool">
+      Whether professional voice cloning is available
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="is_new_user" type="bool">
+  Whether this is a new user account
+</ResponseField>
+
+<ResponseField name="xi_api_key" type="str">
+  Your API key (redacted in response)
+</ResponseField>
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Get user information
+user = client.user.get()
+
+print(f"Subscription: {user.subscription.tier}")
+print(f"Characters remaining: {user.subscription.character_count}")
+print(f"Character limit: {user.subscription.character_limit}")
+print(f"Voice limit: {user.subscription.voice_limit}")
+print(f"Can use IVC: {user.subscription.can_use_instant_voice_cloning}")
+```
+
+### Example Output
+
+```python
+Subscription: creator
+Characters remaining: 85432
+Character limit: 100000
+Voice limit: 30
+Can use IVC: True
+```
+
+## subscription
+
+Access subscription-specific methods.
+
+### subscription.get()
+
+Get detailed subscription information.
+
+```python
+subscription = client.user.subscription.get()
+
+print(f"Tier: {subscription.tier}")
+print(f"Status: {subscription.status}")
+print(f"Billing period: {subscription.billing_period}")
+```
+
+## Async Usage
+
+```python
+from elevenlabs import AsyncElevenLabs
+import asyncio
+
+async def get_user_info():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    user = await client.user.get()
+    
+    print(f"Subscription: {user.subscription.tier}")
+    print(f"Characters: {user.subscription.character_count}/{user.subscription.character_limit}")
+
+asyncio.run(get_user_info())
+```
+
+## Use Cases
+
+<CardGroup cols={2}>
+  <Card title="Usage Monitoring" icon="chart-line">
+    Monitor your character usage and remaining quota
+  </Card>
+  <Card title="Feature Detection" icon="check">
+    Check which features are available in your plan
+  </Card>
+  <Card title="Billing Information" icon="credit-card">
+    View subscription tier and renewal dates
+  </Card>
+  <Card title="Limit Management" icon="gauge">
+    Track voice limits and usage counters
+  </Card>
+</CardGroup>
+
+## Related Methods
+
+- [Usage](/api-reference/usage) - Detailed usage statistics
+- [Models](/api-reference/models) - Available AI models

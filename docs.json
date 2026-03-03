@@ -60,7 +60,9 @@
               "advanced/dubbing",
               "advanced/audio-isolation",
               "advanced/audio-native",
-              "advanced/music-generation"
+              "advanced/music-generation",
+              "advanced/sound-effects",
+              "advanced/dialogue"
             ]
           },
           {
@@ -117,7 +119,9 @@
               "api-reference/audio/speech-to-text",
               "api-reference/audio/dubbing",
               "api-reference/audio/isolation",
-              "api-reference/audio/music"
+              "api-reference/audio/music",
+              "api-reference/audio/sound-effects",
+              "api-reference/audio/dialogue"
             ]
           },
           {
@@ -125,6 +129,13 @@
             "pages": [
               "api-reference/history",
               "api-reference/models"
+            ]
+          },
+          {
+            "group": "Account & Usage",
+            "pages": [
+              "api-reference/user",
+              "api-reference/usage"
             ]
           }
         ]

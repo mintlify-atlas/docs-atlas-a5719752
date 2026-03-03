@@ -1,0 +1,318 @@
+---
+title: Sound Effects Generation
+description: Create realistic sound effects from text descriptions using AI
+---
+
+Generate professional-quality sound effects for your videos, games, podcasts, and voice-overs using the most advanced sound effects AI models.
+
+## Quick Start
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Generate a sound effect
+audio = client.text_to_sound_effects.convert(
+    text="thunder crashing in the distance",
+    duration_seconds=3.0
+)
+
+# Save to file
+with open("thunder.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Natural Sounds" icon="leaf">
+    Generate realistic environmental sounds like rain, wind, or thunder
+  </Card>
+  <Card title="Seamless Looping" icon="arrows-rotate">
+    Create sound effects designed to loop smoothly
+  </Card>
+  <Card title="Custom Duration" icon="clock">
+    Specify exact duration for your sound effects
+  </Card>
+  <Card title="High Quality" icon="star">
+    Professional-grade audio output in multiple formats
+  </Card>
+</CardGroup>
+
+## Basic Usage
+
+### Generate a Sound Effect
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+audio = client.text_to_sound_effects.convert(
+    text="waves crashing on a beach",
+    duration_seconds=5.0
+)
+
+with open("waves.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+### Create Looping Sound Effects
+
+```python
+# Generate a seamlessly looping sound
+audio = client.text_to_sound_effects.convert(
+    text="gentle rain falling",
+    duration_seconds=10.0,
+    loop=True  # Optimized for seamless looping
+)
+
+with open("rain_loop.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+## Parameters
+
+### Text Description
+
+The text parameter accepts natural language descriptions of the sound you want to create:
+
+```python
+# Environmental sounds
+client.text_to_sound_effects.convert(text="wind howling through trees")
+
+# Mechanical sounds
+client.text_to_sound_effects.convert(text="old door creaking open")
+
+# Nature sounds
+client.text_to_sound_effects.convert(text="birds chirping in the morning")
+
+# Urban sounds
+client.text_to_sound_effects.convert(text="city traffic ambience")
+```
+
+### Duration Control
+
+```python
+# Short sound effect (1 second)
+audio = client.text_to_sound_effects.convert(
+    text="door knock",
+    duration_seconds=1.0
+)
+
+# Medium sound effect (5 seconds)
+audio = client.text_to_sound_effects.convert(
+    text="rain ambience",
+    duration_seconds=5.0
+)
+
+# Long ambient sound (30 seconds)
+audio = client.text_to_sound_effects.convert(
+    text="ocean waves",
+    duration_seconds=30.0
+)
+```
+
+### Prompt Influence
+
+Control how closely the generation follows your text description:
+
+```python
+# High influence - very literal interpretation
+audio = client.text_to_sound_effects.convert(
+    text="glass breaking",
+    prompt_influence=0.9
+)
+
+# Medium influence - balanced
+audio = client.text_to_sound_effects.convert(
+    text="footsteps on gravel",
+    prompt_influence=0.5
+)
+
+# Low influence - more creative interpretation
+audio = client.text_to_sound_effects.convert(
+    text="mysterious atmosphere",
+    prompt_influence=0.2
+)
+```
+
+## Output Formats
+
+```python
+# MP3 format (default)
+audio = client.text_to_sound_effects.convert(
+    text="thunder",
+    output_format="mp3_22050_32"
+)
+
+# High-quality MP3
+audio = client.text_to_sound_effects.convert(
+    text="thunder",
+    output_format="mp3_44100_192"  # Requires Creator tier or above
+)
+
+# PCM format for editing
+audio = client.text_to_sound_effects.convert(
+    text="thunder",
+    output_format="pcm_44100"  # Requires Pro tier or above
+)
+```
+
+## Async Usage
+
+```python
+from elevenlabs import AsyncElevenLabs
+import asyncio
+
+async def generate_sound_effect():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    audio = await client.text_to_sound_effects.convert(
+        text="explosion in the distance",
+        duration_seconds=3.0
+    )
+    
+    chunks = []
+    async for chunk in audio:
+        chunks.append(chunk)
+    
+    return b"".join(chunks)
+
+audio_data = asyncio.run(generate_sound_effect())
+```
+
+## Batch Generation
+
+Generate multiple sound effects efficiently:
+
+```python
+from elevenlabs import AsyncElevenLabs
+import asyncio
+
+async def generate_multiple_effects():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    sound_descriptions = [
+        "thunder",
+        "rain",
+        "wind",
+        "fire crackling"
+    ]
+    
+    tasks = [
+        client.text_to_sound_effects.convert(
+            text=desc,
+            duration_seconds=5.0
+        )
+        for desc in sound_descriptions
+    ]
+    
+    results = await asyncio.gather(*tasks)
+    
+    # Save each sound effect
+    for i, (desc, audio) in enumerate(zip(sound_descriptions, results)):
+        chunks = []
+        async for chunk in audio:
+            chunks.append(chunk)
+        
+        with open(f"{desc.replace(' ', '_')}.mp3", "wb") as f:
+            f.write(b"".join(chunks))
+
+asyncio.run(generate_multiple_effects())
+```
+
+## Use Cases
+
+### Video Production
+
+```python
+# Generate ambient background sounds
+ambient = client.text_to_sound_effects.convert(
+    text="busy coffee shop atmosphere",
+    duration_seconds=30.0,
+    loop=True
+)
+
+# Generate specific action sounds
+action = client.text_to_sound_effects.convert(
+    text="car door slam",
+    duration_seconds=2.0
+)
+```
+
+### Game Development
+
+```python
+# Background ambience
+forest_ambience = client.text_to_sound_effects.convert(
+    text="forest with birds and insects",
+    duration_seconds=60.0,
+    loop=True
+)
+
+# Interactive sounds
+footsteps = client.text_to_sound_effects.convert(
+    text="footsteps on wooden floor",
+    duration_seconds=1.0
+)
+```
+
+### Podcast Production
+
+```python
+# Intro/outro sounds
+intro = client.text_to_sound_effects.convert(
+    text="upbeat notification sound",
+    duration_seconds=2.0
+)
+
+# Transition effects
+transition = client.text_to_sound_effects.convert(
+    text="swoosh transition",
+    duration_seconds=1.0
+)
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Writing Effective Descriptions">
+    - Be specific about the sound you want
+    - Include details about intensity, distance, and environment
+    - Use descriptive adjectives ("loud", "gentle", "distant")
+    - Mention specific objects or actions ("glass shattering", "metal clanging")
+  </Accordion>
+  
+  <Accordion title="Duration Guidelines">
+    - Short effects (0.5-2s): Impacts, hits, notifications
+    - Medium effects (3-10s): Transitions, specific actions
+    - Long effects (15-60s): Ambient backgrounds, atmospheres
+    - Use looping for continuous backgrounds
+  </Accordion>
+  
+  <Accordion title="Format Selection">
+    - MP3 22050Hz: Good for web, small file size
+    - MP3 44100Hz: Better quality, larger files
+    - PCM: Best for editing and post-processing
+    - WAV: Lossless quality for professional use
+  </Accordion>
+</AccordionGroup>
+
+## Limitations
+
+<Warning>
+  - Maximum duration may vary based on your subscription tier
+  - High-quality formats (192kbps MP3, PCM, WAV) require higher subscription tiers
+  - Generation time increases with duration
+</Warning>
+
+## Related Features
+
+- [Music Generation](/advanced/music-generation) - Create background music
+- [Text to Speech](/text-to-speech) - Generate voice narration
+- [Dialogue](/advanced/dialogue) - Multi-voice conversations

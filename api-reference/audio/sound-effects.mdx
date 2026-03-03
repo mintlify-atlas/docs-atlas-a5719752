@@ -1,0 +1,122 @@
+---
+title: Sound Effects
+description: Generate sound effects from text descriptions
+icon: waveform
+---
+
+## Overview
+
+The `text_to_sound_effects` client provides methods to generate realistic sound effects from text descriptions using advanced AI models.
+
+## convert()
+
+Generate sound effects from a text description.
+
+### Method Signature
+
+```python
+client.text_to_sound_effects.convert(
+    text: str,
+    output_format: Optional[AllowedOutputFormats] = None,
+    loop: Optional[bool] = None,
+    duration_seconds: Optional[float] = None,
+    prompt_influence: Optional[float] = None,
+    model_id: Optional[str] = None,
+    request_options: Optional[RequestOptions] = None
+) -> Iterator[bytes]
+```
+
+### Parameters
+
+<ParamField path="text" type="str" required>
+  The text description of the sound effect you want to generate.
+</ParamField>
+
+<ParamField path="output_format" type="AllowedOutputFormats">
+  Output format of the generated audio. Formatted as codec_sample_rate_bitrate.
+  
+  Examples:
+  - `mp3_22050_32` - MP3 with 22.05kHz sample rate at 32kbps
+  - `mp3_44100_192` - MP3 with 44.1kHz at 192kbps (requires Creator tier+)
+  - `pcm_44100` - PCM with 44.1kHz (requires Pro tier+)
+  - `ulaw_8000` - μ-law format commonly used for Twilio
+</ParamField>
+
+<ParamField path="loop" type="bool">
+  Whether the sound effect should be designed to loop seamlessly.
+</ParamField>
+
+<ParamField path="duration_seconds" type="float">
+  Target duration of the generated sound effect in seconds.
+</ParamField>
+
+<ParamField path="prompt_influence" type="float">
+  How closely the generation should follow the text prompt. Range: 0.0 to 1.0.
+</ParamField>
+
+<ParamField path="model_id" type="str">
+  The ID of the sound effects model to use.
+</ParamField>
+
+<ParamField path="request_options" type="RequestOptions">
+  Request-specific configuration.
+</ParamField>
+
+### Returns
+
+`Iterator[bytes]` - Streaming audio data in the specified format.
+
+### Example
+
+```python
+from elevenlabs import ElevenLabs
+
+client = ElevenLabs(api_key="YOUR_API_KEY")
+
+# Generate a sound effect
+audio = client.text_to_sound_effects.convert(
+    text="thunder crashing in the distance",
+    duration_seconds=3.0,
+    loop=True
+)
+
+# Save to file
+with open("thunder.mp3", "wb") as f:
+    for chunk in audio:
+        f.write(chunk)
+```
+
+### Use Cases
+
+- **Video Production**: Add realistic sound effects to videos
+- **Voice-overs**: Enhance narration with ambient sounds
+- **Game Development**: Generate dynamic sound effects for games
+- **Podcasts**: Create custom audio branding and transitions
+
+## Async Usage
+
+```python
+from elevenlabs import AsyncElevenLabs
+import asyncio
+
+async def generate_sound():
+    client = AsyncElevenLabs(api_key="YOUR_API_KEY")
+    
+    audio = await client.text_to_sound_effects.convert(
+        text="rain falling on a tin roof",
+        duration_seconds=5.0
+    )
+    
+    chunks = []
+    async for chunk in audio:
+        chunks.append(chunk)
+    
+    return b"".join(chunks)
+
+audio_data = asyncio.run(generate_sound())
+```
+
+## Related Methods
+
+- [Text to Speech](/api-reference/text-to-speech/convert) - Convert text to speech
+- [Music Generation](/api-reference/audio/music) - Generate music from prompts
